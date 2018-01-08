@@ -268,39 +268,42 @@ public class CharacterEntity : NetworkBehaviour, IComparable<CharacterEntity>
         }
     }
 
-    protected virtual void UpdateMovements()
+    protected virtual float GetMoveSpeed()
     {
-        if (!isLocalPlayer)
-            return;
+        return TotalMoveSpeed * GameplayManager.REAL_MOVE_SPEED_RATE;
+    }
 
-        if (isDead)
-        {
-            TempRigidbody.velocity = Vector3.zero;
-            return;
-        }
-
-        var direction = new Vector3(InputManager.GetAxis("Horizontal", false), 0, InputManager.GetAxis("Vertical", false));
+    protected virtual void Move(Vector3 direction)
+    {
         if (direction.magnitude != 0)
         {
-            float directionForce = 0;
-            if (Mathf.Abs(direction.x) > Mathf.Abs(direction.z))
-            {
-                direction = Vector3.right * direction.x;
-                directionForce = direction.x;
-            }
-            else
-            {
-                direction = Vector3.forward * direction.z;
-                directionForce = direction.z;
-            }
-            Vector3 movementDir = direction * TotalMoveSpeed * GameplayManager.REAL_MOVE_SPEED_RATE;
+            if (direction.magnitude > 1)
+                direction = direction.normalized;
+
+            var targetSpeed = GetMoveSpeed();
+            var targetVelocity = direction * targetSpeed;
+
+            // Apply a force that attempts to reach our target velocity
+            Vector3 velocity = TempRigidbody.velocity;
+            Vector3 velocityChange = (targetVelocity - velocity);
+            velocityChange.x = Mathf.Clamp(velocityChange.x, -targetSpeed, targetSpeed);
+            velocityChange.y = 0;
+            velocityChange.z = Mathf.Clamp(velocityChange.z, -targetSpeed, targetSpeed);
+            TempRigidbody.AddForce(velocityChange, ForceMode.VelocityChange);
+            
             var rotateHeading = (TempTransform.position + direction) - TempTransform.position;
             var targetRotation = Quaternion.LookRotation(rotateHeading);
             TempTransform.rotation = Quaternion.Lerp(TempTransform.rotation, targetRotation, Time.deltaTime * 6f);
-            TempRigidbody.velocity = movementDir;
         }
-        else
-            TempRigidbody.velocity = Vector3.zero;
+    }
+
+    protected virtual void UpdateMovements()
+    {
+        if (!isLocalPlayer || isDead)
+            return;
+
+        var direction = new Vector3(InputManager.GetAxis("Horizontal", false), 0, InputManager.GetAxis("Vertical", false));
+        Move(direction);
     }
 
     public void RemoveBomb(BombEntity bomb)

@@ -32,7 +32,6 @@ public class BotEntity : CharacterEntity
         if (isDead)
         {
             ServerRespawn(false);
-            TempRigidbody.velocity = Vector3.zero;
             targetPosition = TempTransform.position;
             waypoints.Clear();
             return;
@@ -44,8 +43,7 @@ public class BotEntity : CharacterEntity
             var heading = targetPosition - TempTransform.position;
             var distance = heading.magnitude;
             var direction = heading / distance; // This is now the normalized direction.
-            Vector3 movementDir = direction * TotalMoveSpeed * GameplayManager.REAL_MOVE_SPEED_RATE;
-            TempRigidbody.velocity = movementDir;
+            Move(direction);
             var targetRotation = Quaternion.LookRotation(heading);
             TempTransform.rotation = Quaternion.Lerp(TempTransform.rotation, targetRotation, Time.deltaTime * 5f);
             BombEntity foundBomb = null;
@@ -53,7 +51,12 @@ public class BotEntity : CharacterEntity
                 bomb = foundBomb;
         }
         else
-            TempRigidbody.velocity = Vector3.zero;
+        {
+            var velocity = TempRigidbody.velocity;
+            velocity.x = 0;
+            velocity.z = 0;
+            TempRigidbody.velocity = velocity;
+        }
     }
 
     private IEnumerator UpdateState()
