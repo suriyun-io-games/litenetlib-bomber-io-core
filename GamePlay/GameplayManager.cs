@@ -22,7 +22,6 @@ public class GameplayManager : NetworkBehaviour
     [Header("Game rules")]
     public int killScore = 15;
     public int suicideScore = -20;
-    public int botCount = 10;
     public int watchAdsRespawnAvailable = 2;
     public float updateScoreDuration = 1f;
     public float brickRespawnDuration = 30f;
@@ -55,24 +54,6 @@ public class GameplayManager : NetworkBehaviour
                 ClientScene.RegisterPrefab(powerUpPrefab.gameObject);
             if (powerUpPrefab != null && !powerUpDropWeights.ContainsKey(powerUpPrefab))
                 powerUpDropWeights.Add(powerUpPrefab, powerUp.randomWeight);
-        }
-    }
-
-    public override void OnStartServer()
-    {
-        var gameInstance = GameInstance.Singleton;
-        var botList = gameInstance.bots;
-        var characterKeys = GameInstance.Characters.Keys;
-        for (var i = 0; i < botCount; ++i)
-        {
-            var bot = botList[Random.Range(0, botList.Length)];
-            var botEntity = Instantiate(gameInstance.botPrefab);
-            botEntity.playerName = bot.name;
-            botEntity.selectHead = bot.GetSelectHead();
-            botEntity.selectBomb = bot.GetSelectBomb();
-            botEntity.selectCharacter = bot.GetSelectCharacter();
-            NetworkServer.Spawn(botEntity.gameObject);
-            Singleton.characters.Add(botEntity);
         }
     }
 
