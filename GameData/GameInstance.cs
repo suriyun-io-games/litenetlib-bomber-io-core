@@ -66,6 +66,7 @@ public class GameInstance : MonoBehaviour
         }
 
         UpdateAvailableItems();
+        ValidatePlayerSave();
     }
 
     private void Start()
@@ -101,6 +102,21 @@ public class GameInstance : MonoBehaviour
             if (bomb != null && bomb.IsUnlock())
                 AvailableBombs.Add(bomb);
         }
+    }
+
+    public void ValidatePlayerSave()
+    {
+        var head = PlayerSave.GetHead();
+        if (head < 0 || head >= AvailableHeads.Count)
+            PlayerSave.SetHead(0);
+
+        var character = PlayerSave.GetCharacter();
+        if (character < 0 || character >= AvailableCharacters.Count)
+            PlayerSave.SetCharacter(0);
+
+        var bomb = PlayerSave.GetBomb();
+        if (bomb < 0 || bomb >= AvailableBombs.Count)
+            PlayerSave.SetBomb(0);
     }
 
     public static HeadData GetHead(string key)
