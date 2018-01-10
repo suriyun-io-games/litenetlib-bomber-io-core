@@ -29,7 +29,6 @@ public class GameplayManager : NetworkBehaviour
     public Transform[] characterSpawnPositions;
     public PowerUpSpawnData[] powerUps;
     public int noDropPowerUpWeight = 1;
-    public readonly List<CharacterEntity> characters = new List<CharacterEntity>();
     public readonly Dictionary<PowerUpEntity, int> powerUpDropWeights = new Dictionary<PowerUpEntity, int>();
 
     private void Awake()
