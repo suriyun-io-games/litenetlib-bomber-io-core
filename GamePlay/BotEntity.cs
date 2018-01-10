@@ -53,9 +53,7 @@ public class BotEntity : CharacterEntity
         else
         {
             var velocity = TempRigidbody.velocity;
-            velocity.x = 0;
-            velocity.z = 0;
-            TempRigidbody.velocity = velocity;
+            TempRigidbody.velocity = new Vector3(0, velocity.y, 0);
         }
     }
 

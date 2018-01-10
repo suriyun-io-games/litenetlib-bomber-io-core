@@ -6,9 +6,8 @@ using UnityEngine.Networking;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody))]
-public class CharacterEntity : NetworkBehaviour, IComparable<CharacterEntity>
+public class CharacterEntity : BaseNetworkGameCharacter
 {
-    public static CharacterEntity Local { get; private set; }
     public Transform damageLaunchTransform;
     public Transform effectTransform;
     public Transform characterModelTransform;
@@ -17,27 +16,6 @@ public class CharacterEntity : NetworkBehaviour, IComparable<CharacterEntity>
     [Header("Effect")]
     public GameObject invincibleEffect;
     [Header("Online data")]
-    [SyncVar]
-    public string playerName;
-
-    [SyncVar]
-    public int score;
-    public int Score
-    {
-        get { return score; }
-        set
-        {
-            if (!isServer)
-                return;
-
-            score = value;
-            GameplayManager.Singleton.UpdateRank(netId);
-        }
-    }
-
-    [SyncVar]
-    public int killCount;
-
     [SyncVar]
     public int watchAdsCount;
 
@@ -208,10 +186,8 @@ public class CharacterEntity : NetworkBehaviour, IComparable<CharacterEntity>
 
     public override void OnStartLocalPlayer()
     {
-        if (Local != null)
-            return;
+        base.OnStartLocalPlayer();
 
-        Local = this;
         var followCam = FindObjectOfType<FollowCamera>();
         followCam.target = TempTransform;
         targetCamera = followCam.GetComponent<Camera>();
@@ -323,8 +299,11 @@ public class CharacterEntity : NetworkBehaviour, IComparable<CharacterEntity>
         {
             if (attacker != null)
                 attacker.KilledTarget(this);
-            isDead = true;
             deathTime = Time.unscaledTime;
+            ++dieCount;
+            isDead = true;
+            var velocity = TempRigidbody.velocity;
+            TempRigidbody.velocity = new Vector3(0, velocity.y, 0);
         }
 
         if (powerUpHeart > 0)
@@ -339,9 +318,9 @@ public class CharacterEntity : NetworkBehaviour, IComparable<CharacterEntity>
     {
         var gameplayManager = GameplayManager.Singleton;
         if (target == this)
-            Score += gameplayManager.suicideScore;
+            score += gameplayManager.suicideScore;
         else
-            Score += gameplayManager.killScore;
+            score += gameplayManager.killScore;
         ++killCount;
     }
 
@@ -383,6 +362,8 @@ public class CharacterEntity : NetworkBehaviour, IComparable<CharacterEntity>
         bombData = GameInstance.GetBomb(value);
     }
 
+    public virtual void OnSpawn() { }
+
     [Server]
     public void ServerInvincible()
     {
@@ -393,27 +374,23 @@ public class CharacterEntity : NetworkBehaviour, IComparable<CharacterEntity>
     [Server]
     public void ServerSpawn(bool isWatchedAds)
     {
-        var gameplayManager = GameplayManager.Singleton;
-        if (!isWatchedAds || watchAdsCount >= gameplayManager.watchAdsRespawnAvailable)
-            Reset();
-        else
+        if (Respawn(isWatchedAds))
         {
-            ++watchAdsCount;
+            var gameplayManager = GameplayManager.Singleton;
+            ServerInvincible();
+            OnSpawn();
+            var position = gameplayManager.GetCharacterSpawnPosition(this);
+            TempTransform.position = position;
+            if (connectionToClient != null)
+                TargetSpawn(connectionToClient, position);
             isDead = false;
         }
-        ServerInvincible();
-
-        var position = gameplayManager.GetCharacterSpawnPosition();
-        TempTransform.position = position;
-        if (connectionToClient != null)
-            TargetSpawn(connectionToClient, position);
     }
 
     [Server]
     public void ServerRespawn(bool isWatchedAds)
     {
-        var gameplayManager = GameplayManager.Singleton;
-        if (Time.unscaledTime - deathTime >= gameplayManager.respawnDuration)
+        if (CanRespawn(isWatchedAds))
             ServerSpawn(isWatchedAds);
     }
 
@@ -455,7 +432,6 @@ public class CharacterEntity : NetworkBehaviour, IComparable<CharacterEntity>
         if (!isReady)
         {
             ServerSpawn(false);
-            GameplayManager.Singleton.UpdateRank(netId);
             isReady = true;
         }
     }
@@ -482,11 +458,6 @@ public class CharacterEntity : NetworkBehaviour, IComparable<CharacterEntity>
     private void TargetSpawn(NetworkConnection conn, Vector3 position)
     {
         transform.position = position;
-    }
-
-    public int CompareTo(CharacterEntity other)
-    {
-        return ((-1 * Score.CompareTo(other.Score)) * 10) + netId.Value.CompareTo(other.netId.Value);
     }
 
     protected Vector3 RoundXZ(Vector3 vector)

@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 [RequireComponent(typeof(GameNetworkDiscovery))]
-public class GameNetworkManager : SimpleLanNetworkManager
+public class GameNetworkManager : BaseNetworkGameManager
 {
     public static new GameNetworkManager Singleton
     {
@@ -27,10 +27,7 @@ public class GameNetworkManager : SimpleLanNetworkManager
         {
             // Ready/AddPlayer is usually triggered by a scene load completing. if no scene was loaded, then Ready/AddPlayer it here instead.
             ClientScene.Ready(conn);
-            if (autoCreatePlayer)
-            {
-                ClientScene.AddPlayer(conn, 0, MakeJoinMessage());
-            }
+            ClientScene.AddPlayer(conn, 0, MakeJoinMessage());
         }
     }
 
@@ -38,11 +35,6 @@ public class GameNetworkManager : SimpleLanNetworkManager
     {
         // always become ready.
         ClientScene.Ready(conn);
-
-        if (!autoCreatePlayer)
-        {
-            return;
-        }
 
         bool addPlayer = (ClientScene.localPlayers.Count == 0);
         bool foundPlayer = false;
@@ -54,35 +46,30 @@ public class GameNetworkManager : SimpleLanNetworkManager
                 break;
             }
         }
+        // there are players, but their game objects have all been deleted
         if (!foundPlayer)
-        {
-            // there are players, but their game objects have all been deleted
             addPlayer = true;
-        }
+
         if (addPlayer)
-        {
             ClientScene.AddPlayer(conn, 0, MakeJoinMessage());
-        }
     }
 
-    public override void OnServerAddPlayer(NetworkConnection conn, short playerControllerId, NetworkReader extraMessageReader)
+    protected override BaseNetworkGameCharacter NewCharacter(NetworkReader extraMessageReader)
     {
         var joinMessage = extraMessageReader.ReadMessage<JoinMessage>();
-        var characterObject = Instantiate(GameInstance.Singleton.characterPrefab.gameObject);
-        var character = characterObject.GetComponent<CharacterEntity>();
+        var character = Instantiate(GameInstance.Singleton.characterPrefab);
         character.playerName = joinMessage.playerName;
         character.selectHead = joinMessage.selectHead;
         character.selectBomb = joinMessage.selectBomb;
         character.selectCharacter = joinMessage.selectCharacter;
-        GameplayManager.Singleton.characters.Add(character);
-        NetworkServer.AddPlayerForConnection(conn, characterObject, playerControllerId);
+        return character;
     }
 
-    public override void OnServerDisconnect(NetworkConnection conn)
+    protected override void UpdateScores(NetworkGameScore[] scores)
     {
-        var character = conn.playerControllers[0].gameObject.GetComponent<CharacterEntity>();
-        GameplayManager.Singleton.characters.Remove(character);
-        NetworkServer.DestroyPlayersForConnection(conn);
+        var gameplayManager = GameplayManager.Singleton;
+        if (gameplayManager != null)
+            gameplayManager.uiGameplay.UpdateRankings(scores);
     }
 
     [System.Serializable]
