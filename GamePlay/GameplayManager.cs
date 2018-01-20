@@ -16,8 +16,6 @@ public class GameplayManager : NetworkBehaviour
     public int maxBombAmountPowerUp = 9;
     public int maxHeartPowerUp = 9;
     public int maxMoveSpeedPowerUp = 9;
-    [Header("UI")]
-    public UIGameplay uiGameplay;
     [Header("Game rules")]
     public int killScore = 15;
     public int suicideScore = -20;

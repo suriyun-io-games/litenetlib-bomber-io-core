@@ -31,8 +31,6 @@ public class UIGameplay : MonoBehaviour
             {
                 hidingIfDedicateUi.SetActive(!NetworkServer.active || NetworkServer.localClientActive);
             }
-            if (isNetworkActive)
-                FadeOut();
             isNetworkActiveDirty = isNetworkActive;
         }
 
@@ -148,10 +146,22 @@ public class UIGameplay : MonoBehaviour
             character.CmdRespawn(true);
         }
     }
-
+    
     public void ExitGame()
     {
-        GameNetworkManager.Singleton.StopHost();
+        if (blackFade != null)
+        {
+            blackFade.onFadeIn.AddListener(() =>
+            {
+                GameNetworkManager.Singleton.StopHost();
+            });
+            blackFade.FadeIn();
+        }
+        else
+        {
+            Destroy(gameObject);
+            GameNetworkManager.Singleton.StopHost();
+        }
     }
 
     public void FadeIn()

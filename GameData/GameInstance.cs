@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class GameInstance : MonoBehaviour
+public class GameInstance : BaseNetworkGameInstance
 {
     public static GameInstance Singleton { get; private set; }
     public CharacterEntity characterPrefab;
@@ -28,8 +28,9 @@ public class GameInstance : MonoBehaviour
     public static readonly Dictionary<string, HeadData> Heads = new Dictionary<string, HeadData>();
     public static readonly Dictionary<string, CharacterData> Characters = new Dictionary<string, CharacterData>();
     public static readonly Dictionary<string, BombData> Bombs = new Dictionary<string, BombData>();
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         if (Singleton != null)
         {
             Destroy(gameObject);
