@@ -22,14 +22,6 @@ public class UIGameplay : MonoBehaviour
     private bool isNetworkActiveDirty;
     private bool isRespawnShown;
 
-    private void Awake()
-    {
-        foreach (var mobileOnlyUi in mobileOnlyUis)
-        {
-            mobileOnlyUi.SetActive(Application.isMobilePlatform);
-        }
-    }
-
     private void Update()
     {
         var isNetworkActive = NetworkManager.singleton.isNetworkActive;
@@ -42,6 +34,15 @@ public class UIGameplay : MonoBehaviour
             if (isNetworkActive)
                 FadeOut();
             isNetworkActiveDirty = isNetworkActive;
+        }
+
+        foreach (var mobileOnlyUi in mobileOnlyUis)
+        {
+            bool showJoystick = Application.isMobilePlatform;
+#if UNITY_EDITOR
+            showJoystick = GameInstance.Singleton.showJoystickInEditor;
+#endif
+            mobileOnlyUi.SetActive(showJoystick);
         }
 
         var localCharacter = BaseNetworkGameCharacter.Local as CharacterEntity;

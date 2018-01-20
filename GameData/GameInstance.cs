@@ -18,6 +18,7 @@ public class GameInstance : MonoBehaviour
     public int bombLayer = 9;
     public int brickLayer = 10;
     public int mapLayer = 11;
+    public bool showJoystickInEditor = true;
     public string watchAdsRespawnPlacement = "respawnPlacement";
     // An available list, list of item that already unlocked
     public static readonly List<HeadData> AvailableHeads = new List<HeadData>();

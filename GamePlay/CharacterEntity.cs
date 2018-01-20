@@ -280,6 +280,12 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
         var direction = new Vector3(InputManager.GetAxis("Horizontal", false), 0, InputManager.GetAxis("Vertical", false));
         Move(direction);
+
+        bool showJoystick = Application.isMobilePlatform;
+#if UNITY_EDITOR
+        showJoystick = GameInstance.Singleton.showJoystickInEditor;
+#endif
+        InputManager.useMobileInputOnNonMobile = showJoystick;
     }
 
     public void RemoveBomb(BombEntity bomb)
