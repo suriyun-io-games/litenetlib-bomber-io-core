@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using UnityEngine.Rendering;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -69,17 +68,6 @@ public class GameInstance : BaseNetworkGameInstance
 
         UpdateAvailableItems();
         ValidatePlayerSave();
-    }
-
-    private void Start()
-    {
-        // If game running in batch mode, run as server
-        if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
-        {
-            Application.targetFrameRate = 30;
-            Debug.Log("Running as server in batch mode");
-            GameNetworkManager.Singleton.StartDedicateServer();
-        }
     }
 
     public void UpdateAvailableItems()
