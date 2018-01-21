@@ -46,6 +46,11 @@ public class CharacterEntity : BaseNetworkGameCharacter
     [SyncVar]
     public bool isInvincible;
 
+    public override bool IsDead
+    {
+        get { return isDead; }
+    }
+
     protected readonly List<BombEntity> bombs = new List<BombEntity>();
     protected Camera targetCamera;
     protected CharacterModel characterModel;
