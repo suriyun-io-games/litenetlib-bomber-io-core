@@ -11,6 +11,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     public Transform damageLaunchTransform;
     public Transform effectTransform;
     public Transform characterModelTransform;
+    public GameObject[] localPlayerObjects;
     [Header("UI")]
     public Text nameText;
     [Header("Effect")]
@@ -45,6 +46,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     [SyncVar]
     public bool isInvincible;
+
+    [SyncVar]
+    public string extra;
 
     public override bool IsDead
     {
@@ -168,6 +172,10 @@ public class CharacterEntity : BaseNetworkGameCharacter
             effectTransform = TempTransform;
         if (characterModelTransform == null)
             characterModelTransform = TempTransform;
+        foreach (var localPlayerObject in localPlayerObjects)
+        {
+            localPlayerObject.SetActive(false);
+        }
     }
 
     public override void OnStartClient()
@@ -199,6 +207,11 @@ public class CharacterEntity : BaseNetworkGameCharacter
         var uiGameplay = FindObjectOfType<UIGameplay>();
         if (uiGameplay != null)
             uiGameplay.FadeOut();
+
+        foreach (var localPlayerObject in localPlayerObjects)
+        {
+            localPlayerObject.SetActive(true);
+        }
 
         CmdReady();
     }
