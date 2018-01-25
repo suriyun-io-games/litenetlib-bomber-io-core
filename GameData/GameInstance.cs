@@ -52,9 +52,9 @@ public class GameInstance : BaseNetworkGameInstance
         }
 
         Characters.Clear();
-        foreach (var characterModel in characters)
+        foreach (var character in characters)
         {
-            Characters.Add(characterModel.GetId(), characterModel);
+            Characters.Add(character.GetId(), character);
         }
 
         Bombs.Clear();
