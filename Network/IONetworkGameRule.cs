@@ -45,11 +45,14 @@ public class IONetworkGameRule : BaseNetworkGameRule
 
         return true;
     }
-
+    
     public override void InitialClientObjects(NetworkClient client)
     {
         var ui = FindObjectOfType<UIGameplay>();
         if (ui == null && uiGameplayPrefab != null)
-            Instantiate(uiGameplayPrefab);
+        {
+            ui = Instantiate(uiGameplayPrefab);
+            ui.gameObject.SetActive(true);
+        }
     }
 }
