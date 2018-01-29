@@ -216,8 +216,12 @@ public class CharacterEntity : BaseNetworkGameCharacter
         CmdReady();
     }
 
-    private void Update()
+    protected override void Update()
     {
+        base.Update();
+        if (NetworkManager != null && NetworkManager.IsMatchEnded)
+            return;
+
         if (isServer && isInvincible && Time.unscaledTime - invincibleTime >= GameplayManager.Singleton.invincibleDuration)
             isInvincible = false;
         if (invincibleEffect != null)
@@ -235,6 +239,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     private void FixedUpdate()
     {
+        if (NetworkManager != null && NetworkManager.IsMatchEnded)
+            return;
+
         UpdateMovements();
     }
 
