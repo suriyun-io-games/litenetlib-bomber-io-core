@@ -16,8 +16,8 @@ public class GameNetworkManager : BaseNetworkGameManager
         var msg = new JoinMessage();
         msg.playerName = PlayerSave.GetPlayerName();
         msg.selectHead = GameInstance.GetAvailableHead(PlayerSave.GetHead()).GetId();
-        msg.selectBomb = GameInstance.GetAvailableBomb(PlayerSave.GetBomb()).GetId();
         msg.selectCharacter = GameInstance.GetAvailableCharacter(PlayerSave.GetCharacter()).GetId();
+        msg.selectBomb = GameInstance.GetAvailableBomb(PlayerSave.GetBomb()).GetId();
         return msg;
     }
 
