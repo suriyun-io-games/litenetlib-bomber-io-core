@@ -6,6 +6,13 @@ using UnityEngine.Networking;
 
 public class GameplayManager : NetworkBehaviour
 {
+    [System.Serializable]
+    public struct RewardCurrency
+    {
+        public string currencyId;
+        public int randomAmountMin;
+        public int randomAmountMax;
+    }
     public const float REAL_MOVE_SPEED_RATE = 0.1f;
     public static GameplayManager Singleton { get; private set; }
     [Header("Character stats")]
@@ -17,6 +24,7 @@ public class GameplayManager : NetworkBehaviour
     public int maxHeartPowerUp = 9;
     public int maxMoveSpeedPowerUp = 9;
     [Header("Game rules")]
+    public RewardCurrency[] rewardCurrencies;
     public int killScore = 15;
     public int suicideScore = -20;
     public int watchAdsRespawnAvailable = 2;

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -353,7 +352,18 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (target == this)
             score += gameplayManager.suicideScore;
         else
+        {
             score += gameplayManager.killScore;
+            if (connectionToClient != null)
+            {
+                foreach (var rewardCurrency in gameplayManager.rewardCurrencies)
+                {
+                    var currencyId = rewardCurrency.currencyId;
+                    var amount = Random.Range(rewardCurrency.randomAmountMin, rewardCurrency.randomAmountMax);
+                    TargetRewardCurrency(connectionToClient, currencyId, amount);
+                }
+            }
+        }
         ++killCount;
     }
 
@@ -491,6 +501,12 @@ public class CharacterEntity : BaseNetworkGameCharacter
     private void TargetSpawn(NetworkConnection conn, Vector3 position)
     {
         transform.position = position;
+    }
+
+    [TargetRpc]
+    private void TargetRewardCurrency(NetworkConnection conn, string currencyId, int amount)
+    {
+        MonetizationManager.Save.AddCurrency(currencyId, amount);
     }
 
     protected Vector3 RoundXZ(Vector3 vector)
