@@ -61,6 +61,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected CharacterData characterData;
     protected HeadData headData;
     protected BombData bombData;
+    protected bool isMobileInput;
+    protected Vector2 inputMove;
 
     public bool isReady { get; private set; }
     public float deathTime { get; private set; }
@@ -236,12 +238,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (nameText != null)
             nameText.text = playerName;
         UpdateAnimation();
+        UpdateInput();
         TempCollider.enabled = isServer || isLocalPlayer;
-        if (isLocalPlayer && !isDead)
-        {
-            if (InputManager.GetButtonDown("Fire1"))
-                CmdPlantBomb(RoundXZ(TempTransform.position));
-        }
     }
 
     private void FixedUpdate()
@@ -250,6 +248,37 @@ public class CharacterEntity : BaseNetworkGameCharacter
             return;
 
         UpdateMovements();
+    }
+
+    protected virtual void UpdateInput()
+    {
+        if (!isLocalPlayer || isDead)
+            return;
+
+        bool canControl = true;
+        var fields = FindObjectsOfType<InputField>();
+        foreach (var field in fields)
+        {
+            if (field.isFocused)
+            {
+                canControl = false;
+                break;
+            }
+        }
+
+        isMobileInput = Application.isMobilePlatform;
+#if UNITY_EDITOR
+        isMobileInput = GameInstance.Singleton.showJoystickInEditor;
+#endif
+        InputManager.useMobileInputOnNonMobile = isMobileInput;
+
+        inputMove = Vector2.zero;
+        if (canControl)
+        {
+            inputMove = new Vector2(InputManager.GetAxis("Horizontal", false), InputManager.GetAxis("Vertical", false));
+            if (InputManager.GetButtonDown("Fire1"))
+                CmdPlantBomb(RoundXZ(TempTransform.position));
+        }
     }
 
     protected virtual void UpdateAnimation()
@@ -312,14 +341,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (!isLocalPlayer || isDead)
             return;
 
-        var direction = new Vector3(InputManager.GetAxis("Horizontal", false), 0, InputManager.GetAxis("Vertical", false));
-        Move(direction);
-
-        bool showJoystick = Application.isMobilePlatform;
-#if UNITY_EDITOR
-        showJoystick = GameInstance.Singleton.showJoystickInEditor;
-#endif
-        InputManager.useMobileInputOnNonMobile = showJoystick;
+        var moveDirection = new Vector3(inputMove.x, 0, inputMove.y);
+        Move(moveDirection);
     }
 
     public void RemoveBomb(BombEntity bomb)
