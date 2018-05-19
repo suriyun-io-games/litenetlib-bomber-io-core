@@ -8,13 +8,28 @@ public class BombEntity : NetworkBehaviour
     public const float DurationBeforeDestroy = 2f;
     [SyncVar]
     public int addBombRange;
-    public CharacterEntity planter;
+    [SyncVar]
+    public NetworkInstanceId planterNetId;
     public AudioClip explosionSound;
     public EffectEntity explosionEffect;
     public float lifeTime = 2f;
 
     public bool Exploded { get; protected set; }
     private List<CharacterEntity> ignoredCharacters;
+    private CharacterEntity planter;
+    public CharacterEntity Planter
+    {
+        get
+        {
+            if (planter == null)
+            {
+                var go = NetworkServer.active ? NetworkServer.FindLocalObject(planterNetId) : ClientScene.FindLocalObject(planterNetId);
+                if (go != null)
+                    planter = go.GetComponent<CharacterEntity>();
+            }
+            return planter;
+        }
+    }
     private Transform tempTransform;
     public Transform TempTransform
     {
@@ -131,8 +146,8 @@ public class BombEntity : NetworkBehaviour
         CreateExplosions(Vector3.back, playingEffectPositions);
         CreateExplosions(Vector3.left, playingEffectPositions);
 
-        if (planter != null)
-            planter.RemoveBomb(this);
+        if (Planter != null)
+            Planter.RemoveBomb(this);
 
         RpcExplode(playingEffectPositions.ToArray());
         StartCoroutine(Destroying());
@@ -180,7 +195,7 @@ public class BombEntity : NetworkBehaviour
             {
                 // Take damage to the character
                 if (characterEntity != null)
-                    characterEntity.ReceiveDamage(planter);
+                    characterEntity.ReceiveDamage(Planter);
                 // Take damage to the brick
                 if (brickEntity != null)
                     brickEntity.ReceiveDamage();

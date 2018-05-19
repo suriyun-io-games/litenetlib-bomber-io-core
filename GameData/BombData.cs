@@ -17,7 +17,7 @@ public class BombData : ItemData
             position.y, 
             Mathf.RoundToInt(position.z));
         bombEntity.addBombRange = planter.PowerUpBombRange;
-        bombEntity.planter = planter;
+        bombEntity.planterNetId = planter.netId;
         // We're going to use velocy in case that client cannot find `Attacker` entity
         NetworkServer.Spawn(bombEntity.gameObject);
         return bombEntity;
