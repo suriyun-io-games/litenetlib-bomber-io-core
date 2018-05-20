@@ -5,6 +5,7 @@ using UnityEngine.Networking;
 
 public class PowerUpEntity : NetworkBehaviour
 {
+    public const float DestroyDelay = 1f;
     public CharacterStats stats;
     public EffectEntity powerUpEffect;
 
@@ -33,9 +34,21 @@ public class PowerUpEntity : NetworkBehaviour
                 character.PowerUpBombAmount += stats.bombAmount;
                 character.PowerUpHeart += stats.heart;
                 character.PowerUpMoveSpeed += stats.moveSpeed;
-                // Destroy this on all clients
-                NetworkServer.Destroy(gameObject);
             }
+            StartCoroutine(DestroyRoutine());
         }
+    }
+
+    IEnumerator DestroyRoutine()
+    {
+        var renderers = GetComponentsInChildren<Renderer>();
+        foreach (var renderer in renderers)
+        {
+            renderer.enabled = false;
+        }
+        yield return new WaitForSeconds(DestroyDelay);
+        // Destroy this on all clients
+        if (isServer)
+            NetworkServer.Destroy(gameObject);
     }
 }
