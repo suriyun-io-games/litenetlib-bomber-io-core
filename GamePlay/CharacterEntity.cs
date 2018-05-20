@@ -394,8 +394,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
                     TargetRewardCurrency(connectionToClient, currencyId, amount);
                 }
             }
+            ++killCount;
         }
-        ++killCount;
     }
 
     private void OnIsDeadChanged(bool value)

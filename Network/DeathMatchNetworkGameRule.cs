@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public class DeathMatchNetworkGameRule : IONetworkGameRule
 {
@@ -35,5 +36,16 @@ public class DeathMatchNetworkGameRule : IONetworkGameRule
         targetCharacter.watchAdsCount = 0;
 
         return true;
+    }
+
+    public override void InitialClientObjects(NetworkClient client)
+    {
+        base.InitialClientObjects(client);
+        var gameplayManager = FindObjectOfType<GameplayManager>();
+        if (gameplayManager != null)
+        {
+            gameplayManager.killScore = 1;
+            gameplayManager.suicideScore = 0;
+        }
     }
 }
