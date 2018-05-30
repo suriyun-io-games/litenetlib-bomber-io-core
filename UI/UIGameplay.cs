@@ -17,6 +17,7 @@ public class UIGameplay : MonoBehaviour
     public GameObject respawnUiContainer;
     public GameObject respawnButtonContainer;
     public UINetworkGameScores[] uiGameScores;
+    public UIKillNotifies uiKillNotifies;
     public GameObject matchEndUi;
     public GameObject[] mobileOnlyUis;
     public GameObject[] hidingIfDedicateServerUis;
@@ -121,6 +122,22 @@ public class UIGameplay : MonoBehaviour
             var uiGameScore = uiGameScores[i];
             if (uiGameScore != null)
                 uiGameScore.UpdateRankings(rankings);
+        }
+    }
+
+    public void KillNotify(string killerName, string victimName, string weaponId)
+    {
+        if (uiKillNotifies != null)
+        {
+            string weaponName = "Unknow Weapon";
+            Texture weaponIcon = null;
+            var bombData = GameInstance.GetBomb(weaponId);
+            if (bombData != null)
+            {
+                weaponName = bombData.title;
+                weaponIcon = bombData.iconTexture;
+            }
+            uiKillNotifies.Notify(killerName, victimName, weaponName, weaponIcon);
         }
     }
 
