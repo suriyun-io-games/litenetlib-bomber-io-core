@@ -10,6 +10,7 @@ public class UIMainMenu : MonoBehaviour
     public Text textSelectBomb;
     public InputField inputName;
     public Transform characterModelTransform;
+    public Transform bombEntityTransform;
     public string onlineNetworkAddress;
     public int onlineNetworkPort;
     public UIEnterNetworkAddress enterNetworkAddressDialog;
@@ -19,6 +20,7 @@ public class UIMainMenu : MonoBehaviour
     private int selectBomb = 0;
     // Showing character / items
     private CharacterModel characterModel;
+    private BombEntity bombEntity;
     private HeadData headData;
 
     public int SelectCharacter
@@ -59,6 +61,7 @@ public class UIMainMenu : MonoBehaviour
                 selectBomb = MaxBomb;
             if (selectBomb > MaxBomb)
                 selectBomb = 0;
+            UpdateBomb();
         }
     }
 
@@ -113,6 +116,20 @@ public class UIMainMenu : MonoBehaviour
         headData = GameInstance.GetAvailableHead(SelectHead);
         if (characterModel != null && headData != null)
             characterModel.SetHeadModel(headData.modelObject);
+    }
+
+    private void UpdateBomb()
+    {
+        if (bombEntity != null)
+            Destroy(bombEntity.gameObject);
+        var bombData = GameInstance.GetAvailableBomb(SelectHead);
+        if (bombData == null || bombData.bombPrefab == null)
+            return;
+        bombEntity = Instantiate(bombData.bombPrefab, bombEntityTransform);
+        bombEntity.transform.localPosition = Vector3.zero;
+        bombEntity.transform.localEulerAngles = Vector3.zero;
+        bombEntity.transform.localScale = Vector3.one;
+        bombEntity.gameObject.SetActive(true);
     }
 
     public void OnClickBackCharacter()
