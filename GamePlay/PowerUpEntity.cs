@@ -6,7 +6,10 @@ using UnityEngine.Networking;
 public class PowerUpEntity : NetworkBehaviour
 {
     public const float DestroyDelay = 1f;
+    [Header("Stats / Currencies")]
     public CharacterStats stats;
+    public InGameCurrency[] currencies;
+    [Header("Effect")]
     public EffectEntity powerUpEffect;
 
     private bool isDead;
@@ -34,6 +37,13 @@ public class PowerUpEntity : NetworkBehaviour
                 character.PowerUpBombAmount += stats.bombAmount;
                 character.PowerUpHeart += stats.heart;
                 character.PowerUpMoveSpeed += stats.moveSpeed;
+            }
+            if (character.isLocalPlayer)
+            {
+                foreach (var currency in currencies)
+                {
+                    MonetizationManager.Save.AddCurrency(currency.id, currency.amount);
+                }
             }
             StartCoroutine(DestroyRoutine());
         }
