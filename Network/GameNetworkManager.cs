@@ -15,9 +15,19 @@ public class GameNetworkManager : BaseNetworkGameManager
     {
         var msg = new JoinMessage();
         msg.playerName = PlayerSave.GetPlayerName();
-        msg.selectHead = GameInstance.GetAvailableHead(PlayerSave.GetHead()).GetId();
-        msg.selectCharacter = GameInstance.GetAvailableCharacter(PlayerSave.GetCharacter()).GetId();
-        msg.selectBomb = GameInstance.GetAvailableBomb(PlayerSave.GetBomb()).GetId();
+        msg.selectHead = GameInstance.GetAvailableHead(PlayerSave.GetHead()).GetHashId();
+        msg.selectCharacter = GameInstance.GetAvailableCharacter(PlayerSave.GetCharacter()).GetHashId();
+        msg.selectBomb = GameInstance.GetAvailableBomb(PlayerSave.GetBomb()).GetHashId();
+        // Custom Equipments
+        var savedCustomEquipments = PlayerSave.GetCustomEquipments();
+        var selectCustomEquipments = new List<int>();
+        foreach (var savedCustomEquipment in savedCustomEquipments)
+        {
+            var data = GameInstance.GetAvailableCustomEquipment(savedCustomEquipment.Value);
+            if (data != null)
+                selectCustomEquipments.Add(data.GetHashId());
+        }
+        msg.selectCustomEquipments = selectCustomEquipments.ToArray();
         return msg;
     }
 
@@ -60,8 +70,12 @@ public class GameNetworkManager : BaseNetworkGameManager
         var character = Instantiate(GameInstance.Singleton.characterPrefab);
         character.playerName = joinMessage.playerName;
         character.selectHead = joinMessage.selectHead;
-        character.selectBomb = joinMessage.selectBomb;
         character.selectCharacter = joinMessage.selectCharacter;
+        character.selectBomb = joinMessage.selectBomb;
+        foreach (var customEquipment in joinMessage.selectCustomEquipments)
+        {
+            character.selectCustomEquipments.Add(customEquipment);
+        }
         character.extra = joinMessage.extra;
         return character;
     }
@@ -94,9 +108,10 @@ public class GameNetworkManager : BaseNetworkGameManager
     public class JoinMessage : MessageBase
     {
         public string playerName;
-        public string selectHead;
-        public string selectCharacter;
-        public string selectBomb;
+        public int selectHead;
+        public int selectCharacter;
+        public int selectBomb;
+        public int[] selectCustomEquipments;
         public string extra;
     }
 }

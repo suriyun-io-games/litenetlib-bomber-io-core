@@ -19,33 +19,26 @@ public class CharacterEntity : BaseNetworkGameCharacter
     [Header("Online data")]
     [SyncVar]
     public int watchAdsCount;
-
-    [SyncVar]
-    public int powerUpBombRange;
-
-    [SyncVar]
-    public int powerUpBombAmount;
-
-    [SyncVar]
-    public int powerUpHeart;
-
-    [SyncVar]
-    public int powerUpMoveSpeed;
-
+    
     [SyncVar(hook = "OnIsDeadChanged")]
     public bool isDead;
 
     [SyncVar(hook = "OnCharacterChanged")]
-    public string selectCharacter = "";
+    public int selectCharacter = 0;
 
     [SyncVar(hook = "OnHeadChanged")]
-    public string selectHead = "";
+    public int selectHead = 0;
 
     [SyncVar(hook = "OnBombChanged")]
-    public string selectBomb = "";
+    public int selectBomb = 0;
+
+    public SyncListInt selectCustomEquipments = new SyncListInt();
 
     [SyncVar]
     public bool isInvincible;
+
+    [SyncVar]
+    public CharacterStats addStats;
 
     [SyncVar]
     public string extra;
@@ -64,8 +57,11 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected CharacterData characterData;
     protected HeadData headData;
     protected BombData bombData;
+    protected Dictionary<int, CustomEquipmentData> customEquipmentDict = new Dictionary<int, CustomEquipmentData>();
     protected bool isMobileInput;
     protected Vector2 inputMove;
+    protected Vector3 currentMoveDirection;
+    protected BombEntity kickingBomb;
 
     public bool isReady { get; private set; }
     public float deathTime { get; private set; }
@@ -104,58 +100,51 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     public int PowerUpBombRange
     {
-        get { return powerUpBombRange; }
-        set
+        get
         {
-            if (!isServer)
-                return;
-            powerUpBombRange = value;
             var max = GameplayManager.Singleton.maxBombRangePowerUp;
-            if (powerUpBombRange > max)
-                powerUpBombRange = max;
+            if (addStats.bombRange > max)
+                return max;
+            return addStats.bombRange;
         }
     }
 
     public int PowerUpBombAmount
     {
-        get { return powerUpBombAmount; }
-        set
+        get
         {
-            if (!isServer)
-                return;
-            powerUpBombAmount = value;
             var max = GameplayManager.Singleton.maxBombAmountPowerUp;
-            if (powerUpBombAmount > max)
-                powerUpBombAmount = max;
+            if (addStats.bombAmount > max)
+                return max;
+            return addStats.bombAmount;
         }
     }
 
     public int PowerUpHeart
     {
-        get { return powerUpHeart; }
-        set
+        get
         {
-            if (!isServer)
-                return;
-            powerUpHeart = value;
             var max = GameplayManager.Singleton.maxHeartPowerUp;
-            if (powerUpHeart > max)
-                powerUpHeart = max;
+            if (addStats.heart > max)
+                return max;
+            return addStats.heart;
         }
     }
 
     public int PowerUpMoveSpeed
     {
-        get { return powerUpMoveSpeed; }
-        set
+        get
         {
-            if (!isServer)
-                return;
-            powerUpMoveSpeed = value;
             var max = GameplayManager.Singleton.maxMoveSpeedPowerUp;
-            if (powerUpMoveSpeed > max)
-                powerUpMoveSpeed = max;
+            if (addStats.moveSpeed > max)
+                return max;
+            return addStats.moveSpeed;
         }
+    }
+
+    public bool PowerUpCanKickBomb
+    {
+        get { return addStats.canKickBomb; }
     }
 
     public int TotalMoveSpeed
@@ -163,13 +152,14 @@ public class CharacterEntity : BaseNetworkGameCharacter
         get
         {
             var gameplayManager = GameplayManager.Singleton;
-            var total = gameplayManager.minMoveSpeed + (powerUpMoveSpeed * gameplayManager.addMoveSpeedPerPowerUp);
+            var total = gameplayManager.minMoveSpeed + (PowerUpMoveSpeed * gameplayManager.addMoveSpeedPerPowerUp);
             return total;
         }
     }
 
     private void Awake()
     {
+        selectCustomEquipments.Callback = OnCustomEquipmentsChanged;
         gameObject.layer = GameInstance.Singleton.characterLayer;
         if (damageLaunchTransform == null)
             damageLaunchTransform = TempTransform;
@@ -192,6 +182,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             OnHeadChanged(selectHead);
             OnCharacterChanged(selectCharacter);
             OnBombChanged(selectBomb);
+            OnCustomEquipmentsChanged(SyncList<int>.Operation.OP_DIRTY, 0);
         }
     }
 
@@ -201,6 +192,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         OnHeadChanged(selectHead);
         OnCharacterChanged(selectCharacter);
         OnBombChanged(selectBomb);
+        OnCustomEquipmentsChanged(SyncList<int>.Operation.OP_DIRTY, 0);
     }
 
     public override void OnStartLocalPlayer()
@@ -251,6 +243,50 @@ public class CharacterEntity : BaseNetworkGameCharacter
             return;
 
         UpdateMovements();
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (!isLocalPlayer)
+            return;
+
+        if (PowerUpCanKickBomb)
+            kickingBomb = collision.gameObject.GetComponent<BombEntity>();
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        if (!isLocalPlayer)
+            return;
+
+        if (!PowerUpCanKickBomb || kickingBomb == null)
+            return;
+
+        if (kickingBomb == collision.gameObject.GetComponent<BombEntity>())
+        {
+            var moveDirNorm = currentMoveDirection.normalized;
+            var heading = kickingBomb.TempTransform.position - TempTransform.position;
+            var distance = heading.magnitude;
+            var direction = heading / distance;
+
+            if ((moveDirNorm.x > 0.5f && direction.x > 0.5f) ||
+                (moveDirNorm.z > 0.5f && direction.z > 0.5f) ||
+                (moveDirNorm.x < -0.5f && direction.x < -0.5f) ||
+                (moveDirNorm.z < -0.5f && direction.z < -0.5f))
+            {
+                // Kick bomb if direction is opposite
+                kickingBomb.CmdKick(netId, (sbyte)moveDirNorm.x, (sbyte)moveDirNorm.z);
+            }
+        }
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        if (!isLocalPlayer)
+            return;
+
+        if (!PowerUpCanKickBomb || kickingBomb == collision.gameObject.GetComponent<BombEntity>())
+            kickingBomb = null;
     }
 
     protected virtual void UpdateInput()
@@ -344,8 +380,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (!isLocalPlayer || isDead)
             return;
 
-        var moveDirection = new Vector3(inputMove.x, 0, inputMove.y);
-        Move(moveDirection);
+        currentMoveDirection = new Vector3(inputMove.x, 0, inputMove.y);
+        Move(currentMoveDirection);
     }
 
     public void RemoveBomb(BombEntity bomb)
@@ -361,7 +397,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (isDead || isInvincible)
             return;
 
-        if (powerUpHeart == 0)
+        if (addStats.heart == 0)
         {
             if (attacker != null)
                 attacker.KilledTarget(this);
@@ -372,9 +408,11 @@ public class CharacterEntity : BaseNetworkGameCharacter
             TempRigidbody.velocity = new Vector3(0, velocity.y, 0);
         }
 
-        if (powerUpHeart > 0)
+        if (addStats.heart > 0)
         {
-            --powerUpHeart;
+            var tempStats = addStats;
+            --tempStats.heart;
+            addStats = tempStats;
             ServerInvincible();
         }
     }
@@ -409,7 +447,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         isDead = value;
     }
 
-    private void OnCharacterChanged(string value)
+    private void OnCharacterChanged(int value)
     {
         selectCharacter = value;
         if (characterModel != null)
@@ -423,10 +461,18 @@ public class CharacterEntity : BaseNetworkGameCharacter
         characterModel.transform.localScale = Vector3.one;
         if (headData != null)
             characterModel.SetHeadModel(headData.modelObject);
+        if (customEquipmentDict != null)
+        {
+            characterModel.ClearCustomModels();
+            foreach (var customEquipmentEntry in customEquipmentDict.Values)
+            {
+                characterModel.SetCustomModel(customEquipmentEntry.containerIndex, customEquipmentEntry.modelObject);
+            }
+        }
         characterModel.gameObject.SetActive(true);
     }
 
-    private void OnHeadChanged(string value)
+    private void OnHeadChanged(int value)
     {
         selectHead = value;
         headData = GameInstance.GetHead(value);
@@ -434,10 +480,28 @@ public class CharacterEntity : BaseNetworkGameCharacter
             characterModel.SetHeadModel(headData.modelObject);
     }
 
-    private void OnBombChanged(string value)
+    private void OnBombChanged(int value)
     {
         selectBomb = value;
         bombData = GameInstance.GetBomb(value);
+    }
+
+    protected virtual void OnCustomEquipmentsChanged(SyncList<int>.Operation op, int itemIndex)
+    {
+        if (characterModel != null)
+            characterModel.ClearCustomModels();
+        customEquipmentDict.Clear();
+        for (var i = 0; i < selectCustomEquipments.Count; ++i)
+        {
+            var customEquipmentData = GameInstance.GetCustomEquipment(selectCustomEquipments[i]);
+            if (customEquipmentData != null &&
+                !customEquipmentDict.ContainsKey(customEquipmentData.containerIndex))
+            {
+                customEquipmentDict[customEquipmentData.containerIndex] = customEquipmentData;
+                if (characterModel != null)
+                    characterModel.SetCustomModel(customEquipmentData.containerIndex, customEquipmentData.modelObject);
+            }
+        }
     }
 
     public virtual void OnSpawn() { }
@@ -476,31 +540,19 @@ public class CharacterEntity : BaseNetworkGameCharacter
     public void Reset()
     {
         isDead = false;
-        PowerUpBombRange = 0;
-        PowerUpBombAmount = 0;
-        PowerUpHeart = 0;
-        PowerUpMoveSpeed = 0;
-        if (characterData != null)
-        {
-            PowerUpBombRange += characterData.stats.bombRange;
-            PowerUpBombAmount += characterData.stats.bombAmount;
-            PowerUpHeart += characterData.stats.heart;
-            PowerUpMoveSpeed += characterData.stats.moveSpeed;
-        }
+        var stats = new CharacterStats();
         if (headData != null)
-        {
-            PowerUpBombRange += headData.stats.bombRange;
-            PowerUpBombAmount += headData.stats.bombAmount;
-            PowerUpHeart += headData.stats.heart;
-            PowerUpMoveSpeed += headData.stats.moveSpeed;
-        }
+            stats += headData.stats;
+        if (characterData != null)
+            stats += characterData.stats;
         if (bombData != null)
+            stats += bombData.stats;
+        if (customEquipmentDict != null)
         {
-            PowerUpBombRange += bombData.stats.bombRange;
-            PowerUpBombAmount += bombData.stats.bombAmount;
-            PowerUpHeart += bombData.stats.heart;
-            PowerUpMoveSpeed += bombData.stats.moveSpeed;
+            foreach (var value in customEquipmentDict.Values)
+                stats += value.stats;
         }
+        addStats = stats;
         bombs.Clear();
     }
 

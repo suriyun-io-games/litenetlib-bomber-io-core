@@ -12,6 +12,7 @@ public class GameInstance : BaseNetworkGameInstance
     public HeadData[] heads;
     public BombData[] bombs;
     public BotData[] bots;
+    public CustomEquipmentData[] customEquipments;
     [Tooltip("Physic layer for characters to avoid it collision")]
     public int characterLayer = 8;
     public int bombLayer = 9;
@@ -23,10 +24,12 @@ public class GameInstance : BaseNetworkGameInstance
     public static readonly List<HeadData> AvailableHeads = new List<HeadData>();
     public static readonly List<CharacterData> AvailableCharacters = new List<CharacterData>();
     public static readonly List<BombData> AvailableBombs = new List<BombData>();
+    public static readonly List<CustomEquipmentData> AvailableCustomEquipments = new List<CustomEquipmentData>();
     // All item list
-    public static readonly Dictionary<string, HeadData> Heads = new Dictionary<string, HeadData>();
-    public static readonly Dictionary<string, CharacterData> Characters = new Dictionary<string, CharacterData>();
-    public static readonly Dictionary<string, BombData> Bombs = new Dictionary<string, BombData>();
+    public static readonly Dictionary<int, HeadData> Heads = new Dictionary<int, HeadData>();
+    public static readonly Dictionary<int, CharacterData> Characters = new Dictionary<int, CharacterData>();
+    public static readonly Dictionary<int, BombData> Bombs = new Dictionary<int, BombData>();
+    public static readonly Dictionary<int, CustomEquipmentData> CustomEquipments = new Dictionary<int, CustomEquipmentData>();
     protected override void Awake()
     {
         base.Awake();
@@ -39,33 +42,38 @@ public class GameInstance : BaseNetworkGameInstance
         DontDestroyOnLoad(gameObject);
         Physics.IgnoreLayerCollision(characterLayer, characterLayer, true);
 
-        if (!ClientScene.prefabs.ContainsValue(characterPrefab.gameObject))
-            ClientScene.RegisterPrefab(characterPrefab.gameObject);
-
-        if (!ClientScene.prefabs.ContainsValue(botPrefab.gameObject))
-            ClientScene.RegisterPrefab(botPrefab.gameObject);
-
         Heads.Clear();
         foreach (var head in heads)
         {
-            Heads.Add(head.GetId(), head);
+            Heads.Add(head.GetHashId(), head);
         }
 
         Characters.Clear();
         foreach (var character in characters)
         {
-            Characters.Add(character.GetId(), character);
+            Characters.Add(character.GetHashId(), character);
         }
 
         Bombs.Clear();
         foreach (var bomb in bombs)
         {
-            Bombs.Add(bomb.GetId(), bomb);
-            var bombPrefab = bomb.bombPrefab;
-            if (bombPrefab != null && !ClientScene.prefabs.ContainsValue(bombPrefab.gameObject))
-                ClientScene.RegisterPrefab(bombPrefab.gameObject);
+            Bombs.Add(bomb.GetHashId(), bomb);
         }
 
+        CustomEquipments.Clear();
+        foreach (var customEquipment in customEquipments)
+        {
+            CustomEquipments[customEquipment.GetHashId()] = customEquipment;
+        }
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+        if (characterPrefab != null && !ClientScene.prefabs.ContainsValue(characterPrefab.gameObject))
+            ClientScene.RegisterPrefab(characterPrefab.gameObject);
+        if (botPrefab != null && !ClientScene.prefabs.ContainsValue(botPrefab.gameObject))
+            ClientScene.RegisterPrefab(botPrefab.gameObject);
         UpdateAvailableItems();
         ValidatePlayerSave();
     }
@@ -92,6 +100,13 @@ public class GameInstance : BaseNetworkGameInstance
             if (bomb != null && bomb.IsUnlock())
                 AvailableBombs.Add(bomb);
         }
+
+        AvailableCustomEquipments.Clear();
+        foreach (var customEquipment in customEquipments)
+        {
+            if (customEquipment != null && customEquipment.IsUnlock())
+                AvailableCustomEquipments.Add(customEquipment);
+        }
     }
 
     public void ValidatePlayerSave()
@@ -109,7 +124,7 @@ public class GameInstance : BaseNetworkGameInstance
             PlayerSave.SetBomb(0);
     }
 
-    public static HeadData GetHead(string key)
+    public static HeadData GetHead(int key)
     {
         if (Heads.Count == 0)
             return null;
@@ -118,7 +133,7 @@ public class GameInstance : BaseNetworkGameInstance
         return result;
     }
 
-    public static CharacterData GetCharacter(string key)
+    public static CharacterData GetCharacter(int key)
     {
         if (Characters.Count == 0)
             return null;
@@ -127,12 +142,21 @@ public class GameInstance : BaseNetworkGameInstance
         return result;
     }
 
-    public static BombData GetBomb(string key)
+    public static BombData GetBomb(int key)
     {
         if (Bombs.Count == 0)
             return null;
         BombData result;
         Bombs.TryGetValue(key, out result);
+        return result;
+    }
+
+    public static CustomEquipmentData GetCustomEquipment(int key)
+    {
+        if (CustomEquipments.Count == 0)
+            return null;
+        CustomEquipmentData result;
+        CustomEquipments.TryGetValue(key, out result);
         return result;
     }
 
@@ -161,5 +185,14 @@ public class GameInstance : BaseNetworkGameInstance
         if (index <= 0 || index >= AvailableBombs.Count)
             index = 0;
         return AvailableBombs[index];
+    }
+
+    public static CustomEquipmentData GetAvailableCustomEquipment(int index)
+    {
+        if (AvailableCustomEquipments.Count == 0)
+            return null;
+        if (index <= 0 || index >= AvailableCustomEquipments.Count)
+            index = 0;
+        return AvailableCustomEquipments[index];
     }
 }

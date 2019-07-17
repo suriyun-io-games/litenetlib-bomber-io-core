@@ -32,12 +32,7 @@ public class PowerUpEntity : NetworkBehaviour
             isDead = true;
             EffectEntity.PlayEffect(powerUpEffect, character.effectTransform);
             if (isServer)
-            {
-                character.PowerUpBombRange += stats.bombRange;
-                character.PowerUpBombAmount += stats.bombAmount;
-                character.PowerUpHeart += stats.heart;
-                character.PowerUpMoveSpeed += stats.moveSpeed;
-            }
+                character.addStats += stats;
             if (character.isLocalPlayer)
             {
                 foreach (var currency in currencies)

@@ -10,21 +10,21 @@ public class BotData
     public int bombDataIndex;
     public int characterDataIndex;
 
-    public string GetSelectHead()
+    public int GetSelectHead()
     {
-        var headKeys = new List<string>(GameInstance.Heads.Keys);
+        var headKeys = new List<int>(GameInstance.Heads.Keys);
         return headDataIndex < 0 || headDataIndex > headKeys.Count ? headKeys[Random.Range(0, headKeys.Count)] : headKeys[headDataIndex];
     }
 
-    public string GetSelectBomb()
+    public int GetSelectBomb()
     {
-        var bombKeys = new List<string>(GameInstance.Bombs.Keys);
+        var bombKeys = new List<int>(GameInstance.Bombs.Keys);
         return bombDataIndex < 0 || bombDataIndex > bombKeys.Count ? bombKeys[Random.Range(0, bombKeys.Count)] : bombKeys[bombDataIndex];
     }
 
-    public string GetSelectCharacter()
+    public int GetSelectCharacter()
     {
-        var characterKeys = new List<string>(GameInstance.Characters.Keys);
+        var characterKeys = new List<int>(GameInstance.Characters.Keys);
         return characterDataIndex < 0 || characterDataIndex > characterKeys.Count ? characterKeys[Random.Range(0, characterKeys.Count)] : characterKeys[characterDataIndex];
     }
 }

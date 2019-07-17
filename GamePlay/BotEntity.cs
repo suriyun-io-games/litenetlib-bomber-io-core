@@ -95,7 +95,7 @@ public class BotEntity : CharacterEntity
             exceptDirection = currentDirection * -1;
             currentPosition += currentDirection;
             waypoints.Enqueue(RoundXZ(currentPosition));
-            var bombDistance = 1 + powerUpBombRange;
+            var bombDistance = 1 + PowerUpBombRange;
             if (bomb == null && waypoints.Count > 4 && 
                 (IsNearBrickOrPlayer(currentPosition, Vector3.left, bombDistance) ||
                 IsNearBrickOrPlayer(currentPosition, Vector3.right, bombDistance) ||
