@@ -311,8 +311,7 @@ public class BombEntity : NetworkBehaviour
         }
     }
 
-    [Command]
-    public void CmdKick(NetworkInstanceId kicker, sbyte dirX, sbyte dirZ)
+    public void Kick(NetworkInstanceId kicker, sbyte dirX, sbyte dirZ)
     {
         _kickerNetId = kicker;
         _dirX = dirX;

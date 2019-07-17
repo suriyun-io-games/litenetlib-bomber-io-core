@@ -74,6 +74,12 @@ public class GameInstance : BaseNetworkGameInstance
             ClientScene.RegisterPrefab(characterPrefab.gameObject);
         if (botPrefab != null && !ClientScene.prefabs.ContainsValue(botPrefab.gameObject))
             ClientScene.RegisterPrefab(botPrefab.gameObject);
+        foreach (var bomb in Bombs.Values)
+        {
+            var bombPrefab = bomb.bombPrefab;
+            if (bombPrefab != null && !ClientScene.prefabs.ContainsValue(bombPrefab.gameObject))
+                ClientScene.RegisterPrefab(bombPrefab.gameObject);
+        }
         UpdateAvailableItems();
         ValidatePlayerSave();
     }

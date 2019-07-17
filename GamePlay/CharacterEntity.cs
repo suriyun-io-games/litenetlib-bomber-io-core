@@ -275,7 +275,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 (moveDirNorm.z < -0.5f && direction.z < -0.5f))
             {
                 // Kick bomb if direction is opposite
-                kickingBomb.CmdKick(netId, (sbyte)moveDirNorm.x, (sbyte)moveDirNorm.z);
+                CmdKick(kickingBomb.netId, (sbyte)moveDirNorm.x, (sbyte)moveDirNorm.z);
             }
         }
     }
@@ -602,5 +602,14 @@ public class CharacterEntity : BaseNetworkGameCharacter
             Mathf.RoundToInt(vector.x),
             vector.y,
             Mathf.RoundToInt(vector.z));
+    }
+
+    [Command]
+    public void CmdKick(NetworkInstanceId bombNetId, sbyte dirX, sbyte dirZ)
+    {
+        var bombObj = ClientScene.FindLocalObject(bombNetId);
+        if (bombObj == null)
+            return;
+        bombObj.GetComponent<BombEntity>().Kick(netId, dirX, dirZ);
     }
 }
