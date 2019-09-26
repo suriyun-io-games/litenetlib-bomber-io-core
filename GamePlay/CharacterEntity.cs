@@ -353,7 +353,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     protected virtual void Move(Vector3 direction)
     {
-        if (direction.magnitude != 0)
+        if (direction.magnitude > 0)
         {
             if (direction.magnitude > 1)
                 direction = direction.normalized;
