@@ -41,6 +41,11 @@ public class GameInstance : BaseNetworkGameInstance
         Singleton = this;
         DontDestroyOnLoad(gameObject);
         Physics.IgnoreLayerCollision(characterLayer, characterLayer, true);
+    }
+
+    protected override void Start()
+    {
+        base.Start();
 
         Heads.Clear();
         foreach (var head in heads)
