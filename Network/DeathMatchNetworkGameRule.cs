@@ -43,8 +43,8 @@ public class DeathMatchNetworkGameRule : IONetworkGameRule
     public override bool RespawnCharacter(BaseNetworkGameCharacter character, params object[] extraParams)
     {
         var targetCharacter = character as CharacterEntity;
-        var gameplayManager = GameplayManager.Singleton;
         // In death match mode will not reset score, kill, assist, death
+        targetCharacter.Reset();
         targetCharacter.watchAdsCount = 0;
 
         return true;

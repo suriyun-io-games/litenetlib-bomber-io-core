@@ -46,11 +46,17 @@ public class IONetworkGameRule : BaseNetworkGameRule
 
         var targetCharacter = character as CharacterEntity;
         var gameplayManager = GameplayManager.Singleton;
-        // For IO Modes, character stats will be reset when dead
         if (!isWatchedAds || targetCharacter.watchAdsCount >= gameplayManager.watchAdsRespawnAvailable)
+        {
+            targetCharacter.ResetScore();
+            targetCharacter.ResetKillCount();
+            targetCharacter.ResetAssistCount();
             targetCharacter.Reset();
+        }
         else
+        {
             ++targetCharacter.watchAdsCount;
+        }
 
         return true;
     }
