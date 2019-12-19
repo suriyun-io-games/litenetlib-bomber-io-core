@@ -15,9 +15,12 @@ public class GameNetworkManager : BaseNetworkGameManager
     {
         var msg = new JoinMessage();
         msg.playerName = PlayerSave.GetPlayerName();
-        msg.selectHead = GameInstance.GetAvailableHead(PlayerSave.GetHead()).GetHashId();
-        msg.selectCharacter = GameInstance.GetAvailableCharacter(PlayerSave.GetCharacter()).GetHashId();
-        msg.selectBomb = GameInstance.GetAvailableBomb(PlayerSave.GetBomb()).GetHashId();
+        var headData = GameInstance.GetAvailableHead(PlayerSave.GetHead());
+        var characterData = GameInstance.GetAvailableCharacter(PlayerSave.GetCharacter());
+        var bombData = GameInstance.GetAvailableBomb(PlayerSave.GetBomb());
+        msg.selectHead = headData != null ? headData.GetHashId() : 0;
+        msg.selectCharacter = characterData != null ? characterData.GetHashId() : 0;
+        msg.selectBomb = bombData != null ? bombData.GetHashId() : 0;
         // Custom Equipments
         var savedCustomEquipments = PlayerSave.GetCustomEquipments();
         var selectCustomEquipments = new List<int>();
