@@ -67,6 +67,22 @@ public class CharacterEntity : BaseNetworkGameCharacter
     public float deathTime { get; private set; }
     public float invincibleTime { get; private set; }
 
+    private bool isHidding;
+    public bool IsHidding
+    {
+        get { return isHidding; }
+        set
+        {
+            isHidding = value;
+            var renderers = GetComponentsInChildren<Renderer>();
+            foreach (var renderer in renderers)
+                renderer.enabled = !isHidding;
+            var canvases = GetComponentsInChildren<Canvas>();
+            foreach (var canvas in canvases)
+                canvas.enabled = !isHidding;
+        }
+    }
+
     private Transform tempTransform;
     public Transform TempTransform
     {
