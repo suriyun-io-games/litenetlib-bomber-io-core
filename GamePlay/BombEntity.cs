@@ -82,7 +82,7 @@ public class BombEntity : NetworkBehaviour
             var character = collideObject.GetComponent<CharacterEntity>();
             if (character != null)
             {
-                Physics.IgnoreCollision(character.TempCollider, TempCollider, true);
+                Physics.IgnoreCollision(character.CacheCollider, TempCollider, true);
                 ignoredCharacters.Add(character);
             }
         }
@@ -105,7 +105,7 @@ public class BombEntity : NetworkBehaviour
         foreach (var ignoredCharacter in ignoredCharacters)
         {
             if (ignoredCharacter != null && !newIgnoreList.Contains(ignoredCharacter))
-                Physics.IgnoreCollision(ignoredCharacter.TempCollider, TempCollider, false);
+                Physics.IgnoreCollision(ignoredCharacter.CacheCollider, TempCollider, false);
         }
         ignoredCharacters = newIgnoreList;
 

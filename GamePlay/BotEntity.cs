@@ -12,7 +12,7 @@ public class BotEntity : CharacterEntity
     {
         base.OnStartServer();
         ServerSpawn(false);
-        targetPosition = TempTransform.position;
+        targetPosition = CacheTransform.position;
         StartCoroutine(UpdateState());
     }
 
@@ -32,7 +32,7 @@ public class BotEntity : CharacterEntity
         if (isDead)
         {
             ServerRespawn(false);
-            targetPosition = TempTransform.position;
+            targetPosition = CacheTransform.position;
             waypoints.Clear();
             return;
         }
@@ -40,20 +40,20 @@ public class BotEntity : CharacterEntity
         // Gets a vector that points from the player's position to the target's.
         if (!IsReachedTargetPosition())
         {
-            var heading = targetPosition - TempTransform.position;
+            var heading = targetPosition - CacheTransform.position;
             var distance = heading.magnitude;
             var direction = heading / distance; // This is now the normalized direction.
             Move(direction);
             var targetRotation = Quaternion.LookRotation(heading);
-            TempTransform.rotation = Quaternion.Lerp(TempTransform.rotation, targetRotation, Time.deltaTime * 5f);
+            CacheTransform.rotation = Quaternion.Lerp(CacheTransform.rotation, targetRotation, Time.deltaTime * 5f);
             BombEntity foundBomb = null;
-            if (IsNearBomb(TempTransform.position, direction, out foundBomb))
+            if (IsNearBomb(CacheTransform.position, direction, out foundBomb))
                 bomb = foundBomb;
         }
         else
         {
-            var velocity = TempRigidbody.velocity;
-            TempRigidbody.velocity = new Vector3(0, velocity.y, 0);
+            var velocity = CacheRigidbody.velocity;
+            CacheRigidbody.velocity = new Vector3(0, velocity.y, 0);
         }
     }
 
@@ -68,7 +68,7 @@ public class BotEntity : CharacterEntity
                 yield return StartCoroutine(WalkToLastPosition());
                 // Reached last waypoint position, plant bomb
                 if (bomb == null && bombData != null)
-                    bomb = bombData.Plant(this, TempTransform.position);
+                    bomb = bombData.Plant(this, CacheTransform.position);
                 // If bomb planted, move to avoid it
                 if (bomb != null)
                 {
@@ -84,7 +84,7 @@ public class BotEntity : CharacterEntity
     private IEnumerator FindWaypoints()
     {
         waypoints.Clear();
-        var characterPosition = RoundXZ(TempTransform.position);
+        var characterPosition = RoundXZ(CacheTransform.position);
         var currentPosition = characterPosition;
         var loopCount = 0;
         var exceptDirection = Vector3.zero;
@@ -139,7 +139,7 @@ public class BotEntity : CharacterEntity
 
     private bool IsReachedTargetPosition()
     {
-        return Vector3.Distance(targetPosition, TempTransform.position) < ReachedTargetDistance;
+        return Vector3.Distance(targetPosition, CacheTransform.position) < ReachedTargetDistance;
     }
 
     private bool IsNearWallOrBrickOrBomb(Vector3 position, Vector3 direction, float distance = 1)
@@ -217,7 +217,7 @@ public class BotEntity : CharacterEntity
     private bool ShouldPlantBomb()
     {
         var bombDistance = 1 + PowerUpBombRange;
-        var currentPosition = TempTransform.position;
+        var currentPosition = CacheTransform.position;
         return (
             (IsNearBrickOrPlayer(currentPosition, Vector3.left, bombDistance) && 
             (!IsNearWallOrBrickOrBomb(currentPosition, Vector3.right) ||
