@@ -4,7 +4,6 @@ using UnityEngine;
 using LiteNetLibManager;
 using UnityEngine.UI;
 using static LiteNetLibManager.LiteNetLibSyncList;
-using Boo.Lang;
 
 [RequireComponent(typeof(Rigidbody))]
 public class CharacterEntity : BaseNetworkGameCharacter
