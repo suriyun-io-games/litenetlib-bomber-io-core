@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Networking;
+using LiteNetLibManager;
 
-public class GameplayManager : NetworkBehaviour
+public class GameplayManager : LiteNetLibBehaviour
 {
     [System.Serializable]
     public struct RewardCurrency
@@ -50,8 +50,8 @@ public class GameplayManager : NetworkBehaviour
         foreach (var powerUp in powerUps)
         {
             var powerUpPrefab = powerUp.powerUpPrefab;
-            if (powerUpPrefab != null && !ClientScene.prefabs.ContainsValue(powerUpPrefab.gameObject))
-                ClientScene.RegisterPrefab(powerUpPrefab.gameObject);
+            if (powerUpPrefab != null)
+                GameNetworkManager.Singleton.Assets.RegisterPrefab(powerUpPrefab.Identity);
             if (powerUpPrefab != null && !powerUpDropWeights.ContainsKey(powerUpPrefab))
                 powerUpDropWeights.Add(powerUpPrefab, powerUp.randomWeight);
         }
@@ -59,7 +59,7 @@ public class GameplayManager : NetworkBehaviour
 
     public void SpawnPowerUp(Vector3 position)
     {
-        if (!isServer)
+        if (!IsServer)
             return;
         
         var randomizer = WeightedRandomizer.From(powerUpDropWeights);
@@ -73,7 +73,7 @@ public class GameplayManager : NetworkBehaviour
         if (powerUpPrefab != null)
         {
             var powerUpEntity = Instantiate(powerUpPrefab, position, Quaternion.identity);
-            NetworkServer.Spawn(powerUpEntity.gameObject);
+            Manager.Assets.NetworkSpawn(powerUpEntity.gameObject);
         }
     }
 

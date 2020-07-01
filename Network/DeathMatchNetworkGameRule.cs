@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
+using LiteNetLibManager;
 
 public class DeathMatchNetworkGameRule : IONetworkGameRule
 {
@@ -44,13 +44,13 @@ public class DeathMatchNetworkGameRule : IONetworkGameRule
     {
         var targetCharacter = character as CharacterEntity;
         // In death match mode will not reset score, kill, assist, death
-        targetCharacter.Reset();
+        targetCharacter.ResetItemAndStats();
         targetCharacter.watchAdsCount = 0;
 
         return true;
     }
 
-    public override void InitialClientObjects(NetworkClient client)
+    public override void InitialClientObjects(LiteNetLibClient client)
     {
         base.InitialClientObjects(client);
         var gameplayManager = FindObjectOfType<GameplayManager>();

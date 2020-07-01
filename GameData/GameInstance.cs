@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
+using LiteNetLibManager;
 
 public class GameInstance : BaseNetworkGameInstance
 {
@@ -71,16 +71,6 @@ public class GameInstance : BaseNetworkGameInstance
             CustomEquipments[customEquipment.GetHashId()] = customEquipment;
         }
 
-        if (characterPrefab != null && !ClientScene.prefabs.ContainsValue(characterPrefab.gameObject))
-            ClientScene.RegisterPrefab(characterPrefab.gameObject);
-        if (botPrefab != null && !ClientScene.prefabs.ContainsValue(botPrefab.gameObject))
-            ClientScene.RegisterPrefab(botPrefab.gameObject);
-        foreach (var bomb in Bombs.Values)
-        {
-            var bombPrefab = bomb.bombPrefab;
-            if (bombPrefab != null && !ClientScene.prefabs.ContainsValue(bombPrefab.gameObject))
-                ClientScene.RegisterPrefab(bombPrefab.gameObject);
-        }
         UpdateAvailableItems();
         ValidatePlayerSave();
     }

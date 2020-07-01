@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using UnityEngine.Networking;
+using LiteNetLibManager;
 
 public class IONetworkGameRule : BaseNetworkGameRule
 {
@@ -51,7 +51,7 @@ public class IONetworkGameRule : BaseNetworkGameRule
             targetCharacter.ResetScore();
             targetCharacter.ResetKillCount();
             targetCharacter.ResetAssistCount();
-            targetCharacter.Reset();
+            targetCharacter.ResetItemAndStats();
         }
         else
         {
@@ -60,13 +60,29 @@ public class IONetworkGameRule : BaseNetworkGameRule
 
         return true;
     }
-    
-    public override void InitialClientObjects(NetworkClient client)
+
+    public override void InitialClientObjects(LiteNetLibClient client)
     {
         var ui = FindObjectOfType<UIGameplay>();
         if (ui == null && uiGameplayPrefab != null)
             ui = Instantiate(uiGameplayPrefab);
         if (ui != null)
             ui.gameObject.SetActive(true);
+    }
+
+    public override void RegisterPrefabs()
+    {
+        if (GameInstance.Singleton.characterPrefab != null)
+            networkManager.Assets.RegisterPrefab(GameInstance.Singleton.characterPrefab.Identity);
+
+        if (GameInstance.Singleton.botPrefab != null)
+            networkManager.Assets.RegisterPrefab(GameInstance.Singleton.botPrefab.Identity);
+
+        var bombs = GameInstance.Bombs.Values;
+        foreach (var bomb in bombs)
+        {
+            if (bomb != null && bomb.bombPrefab != null)
+                networkManager.Assets.RegisterPrefab(bomb.bombPrefab.Identity);
+        }
     }
 }

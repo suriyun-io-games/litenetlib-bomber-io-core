@@ -1,15 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
+using LiteNetLibManager;
 
-public class BombEntity : NetworkBehaviour
+public class BombEntity : LiteNetLibBehaviour
 {
     public const float DurationBeforeDestroy = 2f;
-    [SyncVar]
+    [SyncField]
     public int addBombRange;
-    [SyncVar]
-    public NetworkInstanceId planterNetId;
+    [SyncField]
+    public uint planterNetId;
     public AudioClip explosionSound;
     public EffectEntity explosionEffect;
     public float lifeTime = 2f;
@@ -17,7 +17,7 @@ public class BombEntity : NetworkBehaviour
     public bool canExplodeThroughBricks;
 
     public bool Exploded { get; protected set; }
-    private NetworkInstanceId _kickerNetId;
+    private uint _kickerNetId;
     private sbyte _dirX;
     private sbyte _dirZ;
     private List<CharacterEntity> ignoredCharacters;
@@ -28,9 +28,9 @@ public class BombEntity : NetworkBehaviour
         {
             if (planter == null)
             {
-                var go = NetworkServer.active ? NetworkServer.FindLocalObject(planterNetId) : ClientScene.FindLocalObject(planterNetId);
-                if (go != null)
-                    planter = go.GetComponent<CharacterEntity>();
+                LiteNetLibIdentity identity;
+                if (Manager.Assets.TryGetSpawnedObject(planterNetId, out identity))
+                    planter = identity.GetComponent<CharacterEntity>();
             }
             return planter;
         }
@@ -114,7 +114,7 @@ public class BombEntity : NetworkBehaviour
 
     private void UpdateMovement()
     {
-        if (!isServer || TempRigidbody == null)
+        if (!IsServer || TempRigidbody == null)
             return;
 
         if (Mathf.Abs(_dirX) > 0 || Mathf.Abs(_dirZ) > 0)
@@ -140,7 +140,7 @@ public class BombEntity : NetworkBehaviour
         var characterEntity = collision.gameObject.GetComponent<CharacterEntity>();
         if (characterEntity != null)
         {
-            if (characterEntity.netId.Equals(_kickerNetId))
+            if (characterEntity.ObjectId == _kickerNetId)
                 return;
             _dirX = 0;
             _dirZ = 0;
@@ -173,13 +173,13 @@ public class BombEntity : NetworkBehaviour
         foreach (var renderer in renderers)
             renderer.enabled = false;
         yield return new WaitForSeconds(DurationBeforeDestroy);
-        NetworkServer.Destroy(gameObject);
+        NetworkDestroy();
     }
 
     private void Explode()
     {
         // This flag, use to avoid unlimit loops, that can occurs when 2 bombs explode
-        if (Exploded || !isServer)
+        if (Exploded || !IsServer)
             return;
 
         Exploded = true;
@@ -244,7 +244,7 @@ public class BombEntity : NetworkBehaviour
                     collideBrick = true;
             }
             // Next logics will work only on server only so skip it on client
-            if (isServer)
+            if (IsServer)
             {
                 // Take damage to the character
                 if (characterEntity != null)
@@ -254,7 +254,7 @@ public class BombEntity : NetworkBehaviour
                     brickEntity.ReceiveDamage();
                 // Destroy powerup
                 if (powerUpEntity != null)
-                    NetworkServer.Destroy(powerUpEntity.gameObject);
+                    powerUpEntity.NetworkDestroy();
                 // Make chains explode
                 if (bombEntity != null && bombEntity != this && !bombEntity.Exploded)
                     bombEntity.Explode();
@@ -291,8 +291,13 @@ public class BombEntity : NetworkBehaviour
         return true;
     }
 
-    [ClientRpc]
     public void RpcExplode(Vector3[] positions)
+    {
+        CallNetFunction(_RpcExplode, FunctionReceivers.All, positions);
+    }
+
+    [NetFunction]
+    protected void _RpcExplode(Vector3[] positions)
     {
         if (explosionSound != null && AudioManager.Singleton != null)
             AudioSource.PlayClipAtPoint(explosionSound, transform.position, AudioManager.Singleton.sfxVolumeSetting.Level);
@@ -302,7 +307,7 @@ public class BombEntity : NetworkBehaviour
             EffectEntity.PlayEffect(explosionEffect, position, Quaternion.identity);
         }
 
-        if (!isServer)
+        if (!IsServer)
         {
             TempCollider.isTrigger = true;
             var renderers = GetComponentsInChildren<Renderer>();
@@ -311,7 +316,7 @@ public class BombEntity : NetworkBehaviour
         }
     }
 
-    public void Kick(NetworkInstanceId kicker, sbyte dirX, sbyte dirZ)
+    public void Kick(uint kicker, sbyte dirX, sbyte dirZ)
     {
         _kickerNetId = kicker;
         _dirX = dirX;

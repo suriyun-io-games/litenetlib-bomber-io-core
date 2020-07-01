@@ -1,20 +1,20 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
+using LiteNetLibManager;
 
 [RequireComponent(typeof(Collider))]
-public class BrickEntity : NetworkBehaviour
+public class BrickEntity : LiteNetLibBehaviour
 {
     [Tooltip("Use this delay to play dead animation")]
     public float disableRenderersDelay;
     public Animator animator;
-    [SyncVar]
+    [SyncField]
     public bool isDead;
     /// <summary>
     /// Use this flag to set brick renderer disabled, so when player's character come closer when is dead player won't see the brick
     /// </summary>
-    [SyncVar(hook = "OnIsRendererDisabledChanged")]
+    [SyncField(hook = "OnIsRendererDisabledChanged")]
     public bool isRendererDisabled;
     public float deathTime { get; private set; }
     
@@ -46,7 +46,7 @@ public class BrickEntity : NetworkBehaviour
 
     public override void OnStartClient()
     {
-        if (!isServer)
+        if (!IsServer)
             OnIsRendererDisabledChanged(isRendererDisabled);
     }
 
@@ -65,7 +65,7 @@ public class BrickEntity : NetworkBehaviour
     {
         TempCollider.enabled = !isDead;
 
-        if (!isServer || !isDead)
+        if (!IsServer || !isDead)
             return;
 
         // Respawning.
@@ -83,7 +83,7 @@ public class BrickEntity : NetworkBehaviour
 
     public void ReceiveDamage()
     {
-        if (!isServer || isDead)
+        if (!IsServer || isDead)
             return;
         deathTime = Time.unscaledTime;
         isDead = true;
@@ -106,7 +106,7 @@ public class BrickEntity : NetworkBehaviour
     private IEnumerator PlayDeadAnimation()
     {
         yield return new WaitForSeconds(disableRenderersDelay);
-        if (isServer)
+        if (IsServer)
         {
             isRendererDisabled = true;
             SetEnabledAllRenderer(!isRendererDisabled);
@@ -133,14 +133,19 @@ public class BrickEntity : NetworkBehaviour
         {
             var powerUp = collider.GetComponent<PowerUpEntity>();
             if (powerUp != null)
-                NetworkServer.Destroy(powerUp.gameObject);
+                powerUp.NetworkDestroy();
         }
     }
 
-    [ClientRpc]
-    private void RpcIsDeadChanged(bool isDead)
+    public void RpcIsDeadChanged(bool isDead)
     {
-        if (isServer)
+        CallNetFunction(_RpcIsDeadChanged, FunctionReceivers.All, isDead);
+    }
+
+    [NetFunction]
+    private void _RpcIsDeadChanged(bool isDead)
+    {
+        if (IsServer)
             return;
 
         if (!isDead)

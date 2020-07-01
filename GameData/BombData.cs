@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
+using LiteNetLibManager;
 
 public class BombData : ItemData
 {
@@ -17,9 +17,9 @@ public class BombData : ItemData
             position.y, 
             Mathf.RoundToInt(position.z));
         bombEntity.addBombRange = planter.PowerUpBombRange;
-        bombEntity.planterNetId = planter.netId;
+        bombEntity.planterNetId = planter.ObjectId;
         // We're going to use velocy in case that client cannot find `Attacker` entity
-        NetworkServer.Spawn(bombEntity.gameObject);
+        planter.Manager.Assets.NetworkSpawn(bombEntity.gameObject);
         return bombEntity;
     }
 }

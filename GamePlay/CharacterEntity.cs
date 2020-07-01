@@ -1,8 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
+using LiteNetLibManager;
 using UnityEngine.UI;
+using static LiteNetLibManager.LiteNetLibSyncList;
+using Boo.Lang;
 
 [RequireComponent(typeof(Rigidbody))]
 public class CharacterEntity : BaseNetworkGameCharacter
@@ -17,30 +19,30 @@ public class CharacterEntity : BaseNetworkGameCharacter
     [Header("Effect")]
     public GameObject invincibleEffect;
     [Header("Online data")]
-    [SyncVar]
+    [SyncField]
     public int watchAdsCount;
-    
-    [SyncVar(hook = "OnIsDeadChanged")]
+
+    [SyncField(hook = "OnIsDeadChanged")]
     public bool isDead;
 
-    [SyncVar(hook = "OnCharacterChanged")]
+    [SyncField(hook = "OnCharacterChanged")]
     public int selectCharacter = 0;
 
-    [SyncVar(hook = "OnHeadChanged")]
+    [SyncField(hook = "OnHeadChanged")]
     public int selectHead = 0;
 
-    [SyncVar(hook = "OnBombChanged")]
+    [SyncField(hook = "OnBombChanged")]
     public int selectBomb = 0;
 
     public SyncListInt selectCustomEquipments = new SyncListInt();
 
-    [SyncVar]
+    [SyncField]
     public bool isInvincible;
 
-    [SyncVar]
+    [SyncField]
     public CharacterStats addStats;
 
-    [SyncVar]
+    [SyncField]
     public string extra;
 
     [HideInInspector]
@@ -148,7 +150,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     private void Awake()
     {
-        selectCustomEquipments.Callback = OnCustomEquipmentsChanged;
+        selectCustomEquipments.onOperation = OnCustomEquipmentsChanged;
         gameObject.layer = GameInstance.Singleton.characterLayer;
         CacheTransform = transform;
         CacheRigidbody = GetComponent<Rigidbody>();
@@ -168,13 +170,13 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     public override void OnStartClient()
     {
-        if (!isServer)
+        if (!IsServer)
         {
             OnIsDeadChanged(isDead);
             OnHeadChanged(selectHead);
             OnCharacterChanged(selectCharacter);
             OnBombChanged(selectBomb);
-            OnCustomEquipmentsChanged(SyncList<int>.Operation.OP_DIRTY, 0);
+            OnCustomEquipmentsChanged(Operation.Dirty, 0);
         }
     }
 
@@ -184,12 +186,12 @@ public class CharacterEntity : BaseNetworkGameCharacter
         OnHeadChanged(selectHead);
         OnCharacterChanged(selectCharacter);
         OnBombChanged(selectBomb);
-        OnCustomEquipmentsChanged(SyncList<int>.Operation.OP_DIRTY, 0);
+        OnCustomEquipmentsChanged(Operation.Dirty, 0);
     }
 
-    public override void OnStartLocalPlayer()
+    public override void OnStartOwnerClient()
     {
-        base.OnStartLocalPlayer();
+        base.OnStartOwnerClient();
 
         var followCam = FindObjectOfType<FollowCamera>();
         followCam.target = CacheTransform;
@@ -214,11 +216,11 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
         if (IsDead)
         {
-            if (!isServer && isLocalPlayer && Time.unscaledTime - deathTime >= DISCONNECT_WHEN_NOT_RESPAWN_DURATION)
+            if (!IsServer && IsOwnerClient && Time.unscaledTime - deathTime >= DISCONNECT_WHEN_NOT_RESPAWN_DURATION)
                 GameNetworkManager.Singleton.StopHost();
         }
 
-        if (isServer && isInvincible && Time.unscaledTime - invincibleTime >= GameplayManager.Singleton.invincibleDuration)
+        if (IsServer && isInvincible && Time.unscaledTime - invincibleTime >= GameplayManager.Singleton.invincibleDuration)
             isInvincible = false;
         if (invincibleEffect != null)
             invincibleEffect.SetActive(isInvincible);
@@ -226,7 +228,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             nameText.text = playerName;
         UpdateAnimation();
         UpdateInput();
-        CacheCollider.enabled = isServer || isLocalPlayer;
+        CacheCollider.enabled = IsServer || IsOwnerClient;
     }
 
     private void FixedUpdate()
@@ -239,7 +241,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (!isLocalPlayer)
+        if (!IsOwnerClient)
             return;
 
         if (PowerUpCanKickBomb)
@@ -248,7 +250,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     private void OnCollisionStay(Collision collision)
     {
-        if (!isLocalPlayer)
+        if (!IsOwnerClient)
             return;
 
         if (!PowerUpCanKickBomb || kickingBomb == null)
@@ -267,14 +269,14 @@ public class CharacterEntity : BaseNetworkGameCharacter
                 (moveDirNorm.z < -0.5f && direction.z < -0.5f))
             {
                 // Kick bomb if direction is opposite
-                CmdKick(kickingBomb.netId, (sbyte)moveDirNorm.x, (sbyte)moveDirNorm.z);
+                CmdKick(kickingBomb.ObjectId, (sbyte)moveDirNorm.x, (sbyte)moveDirNorm.z);
             }
         }
     }
 
     private void OnCollisionExit(Collision collision)
     {
-        if (!isLocalPlayer)
+        if (!IsOwnerClient)
             return;
 
         if (!PowerUpCanKickBomb || kickingBomb == collision.gameObject.GetComponent<BombEntity>())
@@ -283,7 +285,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     protected virtual void UpdateInput()
     {
-        if (!isLocalPlayer || isDead)
+        if (!IsOwnerClient || isDead)
             return;
 
         bool canControl = true;
@@ -360,7 +362,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
             velocityChange.y = 0;
             velocityChange.z = Mathf.Clamp(velocityChange.z, -targetSpeed, targetSpeed);
             CacheRigidbody.AddForce(velocityChange, ForceMode.VelocityChange);
-            
+
             var rotateHeading = (CacheTransform.position + direction) - CacheTransform.position;
             var targetRotation = Quaternion.LookRotation(rotateHeading);
             CacheTransform.rotation = Quaternion.Lerp(CacheTransform.rotation, targetRotation, Time.deltaTime * 6f);
@@ -369,7 +371,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     protected virtual void UpdateMovements()
     {
-        if (!isLocalPlayer || isDead)
+        if (!IsOwnerClient || isDead)
             return;
 
         currentMoveDirection = new Vector3(inputMove.x, 0, inputMove.y);
@@ -378,14 +380,16 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     public void RemoveBomb(BombEntity bomb)
     {
-        if (!isServer || bombs == null)
+        if (!IsServer || bombs == null)
             return;
         bombs.Remove(bomb);
     }
 
-    [Server]
     public void ReceiveDamage(CharacterEntity attacker)
     {
+        if (!IsServer)
+            return;
+
         if (isDead || isInvincible)
             return;
 
@@ -413,23 +417,22 @@ public class CharacterEntity : BaseNetworkGameCharacter
         }
     }
 
-    [Server]
     public void KilledTarget(CharacterEntity target)
     {
+        if (!IsServer)
+            return;
+
         var gameplayManager = GameplayManager.Singleton;
         if (target == this)
             score += gameplayManager.suicideScore;
         else
         {
             score += gameplayManager.killScore;
-            if (connectionToClient != null)
+            foreach (var rewardCurrency in gameplayManager.rewardCurrencies)
             {
-                foreach (var rewardCurrency in gameplayManager.rewardCurrencies)
-                {
-                    var currencyId = rewardCurrency.currencyId;
-                    var amount = Random.Range(rewardCurrency.randomAmountMin, rewardCurrency.randomAmountMax);
-                    TargetRewardCurrency(connectionToClient, currencyId, amount);
-                }
+                var currencyId = rewardCurrency.currencyId;
+                var amount = Random.Range(rewardCurrency.randomAmountMin, rewardCurrency.randomAmountMax);
+                TargetRewardCurrency(ConnectionId, currencyId, amount);
             }
             ++killCount;
         }
@@ -482,7 +485,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         bombData = GameInstance.GetBomb(value);
     }
 
-    protected virtual void OnCustomEquipmentsChanged(SyncList<int>.Operation op, int itemIndex)
+    protected virtual void OnCustomEquipmentsChanged(Operation op, int itemIndex)
     {
         if (characterModel != null)
             characterModel.ClearCustomModels();
@@ -502,16 +505,18 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     public virtual void OnSpawn() { }
 
-    [Server]
     public void ServerInvincible()
     {
+        if (!IsServer)
+            return;
         invincibleTime = Time.unscaledTime;
         isInvincible = true;
     }
 
-    [Server]
     public void ServerSpawn(bool isWatchedAds)
     {
+        if (!IsServer)
+            return;
         if (Respawn(isWatchedAds))
         {
             var gameplayManager = GameplayManager.Singleton;
@@ -519,22 +524,23 @@ public class CharacterEntity : BaseNetworkGameCharacter
             OnSpawn();
             var position = gameplayManager.GetCharacterSpawnPosition(this);
             CacheTransform.position = position;
-            if (connectionToClient != null)
-                TargetSpawn(connectionToClient, position);
+            TargetSpawn(ConnectionId, position);
             isDead = false;
         }
     }
 
-    [Server]
     public void ServerRespawn(bool isWatchedAds)
     {
+        if (!IsServer)
+            return;
         if (CanRespawn(isWatchedAds))
             ServerSpawn(isWatchedAds);
     }
 
-    [Server]
-    public void Reset()
+    public void ResetItemAndStats()
     {
+        if (!IsServer)
+            return;
         isDead = false;
         var stats = new CharacterStats();
         if (headData != null)
@@ -552,8 +558,13 @@ public class CharacterEntity : BaseNetworkGameCharacter
         bombs.Clear();
     }
 
-    [Command]
     public void CmdReady()
+    {
+        CallNetFunction(_CmdReady, FunctionReceivers.Server);
+    }
+
+    [NetFunction]
+    protected void _CmdReady()
     {
         if (!isReady)
         {
@@ -562,14 +573,24 @@ public class CharacterEntity : BaseNetworkGameCharacter
         }
     }
 
-    [Command]
     public void CmdRespawn(bool isWatchedAds)
+    {
+        CallNetFunction(_CmdRespawn, FunctionReceivers.Server, isWatchedAds);
+    }
+
+    [NetFunction]
+    protected void _CmdRespawn(bool isWatchedAds)
     {
         ServerRespawn(isWatchedAds);
     }
 
-    [Command]
     public void CmdPlantBomb(Vector3 position)
+    {
+        CallNetFunction(_CmdPlantBomb, FunctionReceivers.Server, position);
+    }
+
+    [NetFunction]
+    protected void _CmdPlantBomb(Vector3 position)
     {
         // Avoid hacks
         if (Vector3.Distance(position, CacheTransform.position) > 3)
@@ -580,16 +601,39 @@ public class CharacterEntity : BaseNetworkGameCharacter
             bombs.Add(bombData.Plant(this, position));
     }
 
-    [TargetRpc]
-    private void TargetSpawn(NetworkConnection conn, Vector3 position)
+    public void TargetSpawn(long conn, Vector3 position)
+    {
+        CallNetFunction(_TargetSpawn, conn, position);
+    }
+
+    [NetFunction]
+    protected void _TargetSpawn(Vector3 position)
     {
         transform.position = position;
     }
 
-    [TargetRpc]
-    private void TargetRewardCurrency(NetworkConnection conn, string currencyId, int amount)
+    public void TargetRewardCurrency(long conn, string currencyId, int amount)
+    {
+        CallNetFunction(_TargetRewardCurrency, conn, currencyId, amount);
+    }
+
+    [NetFunction]
+    protected void _TargetRewardCurrency(string currencyId, int amount)
     {
         MonetizationManager.Save.AddCurrency(currencyId, amount);
+    }
+
+    public void CmdKick(uint bombNetId, sbyte dirX, sbyte dirZ)
+    {
+        CallNetFunction(_CmdKick, FunctionReceivers.Server, bombNetId, dirX, dirZ);
+    }
+
+    [NetFunction]
+    protected void _CmdKick(uint bombNetId, sbyte dirX, sbyte dirZ)
+    {
+        LiteNetLibIdentity identity;
+        if (Manager.Assets.TryGetSpawnedObject(bombNetId, out identity))
+            identity.GetComponent<BombEntity>().Kick(ObjectId, dirX, dirZ);
     }
 
     protected Vector3 RoundXZ(Vector3 vector)
@@ -598,14 +642,5 @@ public class CharacterEntity : BaseNetworkGameCharacter
             Mathf.RoundToInt(vector.x),
             vector.y,
             Mathf.RoundToInt(vector.z));
-    }
-
-    [Command]
-    public void CmdKick(NetworkInstanceId bombNetId, sbyte dirX, sbyte dirZ)
-    {
-        var bombObj = ClientScene.FindLocalObject(bombNetId);
-        if (bombObj == null)
-            return;
-        bombObj.GetComponent<BombEntity>().Kick(netId, dirX, dirZ);
     }
 }

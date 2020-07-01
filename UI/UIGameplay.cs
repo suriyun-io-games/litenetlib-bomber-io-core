@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Networking;
+using LiteNetLibManager;
 
 public class UIGameplay : MonoBehaviour
 {
@@ -26,12 +26,13 @@ public class UIGameplay : MonoBehaviour
 
     private void Update()
     {
-        var isNetworkActive = NetworkManager.singleton.isNetworkActive;
+        var isNetworkActive = SimpleLanNetworkManager.Singleton.IsNetworkActive;
         if (isNetworkActiveDirty != isNetworkActive)
         {
             foreach (var hidingIfDedicateUi in hidingIfDedicateServerUis)
             {
-                hidingIfDedicateUi.SetActive(!NetworkServer.active || NetworkServer.localClientActive);
+                if (hidingIfDedicateUi != null)
+                    hidingIfDedicateUi.SetActive(!SimpleLanNetworkManager.Singleton.IsServer || SimpleLanNetworkManager.Singleton.IsClient);
             }
             isNetworkActiveDirty = isNetworkActive;
         }
@@ -42,7 +43,8 @@ public class UIGameplay : MonoBehaviour
 #if UNITY_EDITOR
             showJoystick = GameInstance.Singleton.showJoystickInEditor;
 #endif
-            mobileOnlyUi.SetActive(showJoystick);
+            if (mobileOnlyUi != null)
+                mobileOnlyUi.SetActive(showJoystick);
         }
 
         var localCharacter = BaseNetworkGameCharacter.Local as CharacterEntity;

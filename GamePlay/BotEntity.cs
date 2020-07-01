@@ -16,17 +16,17 @@ public class BotEntity : CharacterEntity
         StartCoroutine(UpdateState());
     }
 
-    public override void OnStartLocalPlayer()
+    public override void OnStartOwnerClient()
     {
         // Do nothing
     }
 
     protected override void UpdateMovements()
     {
-        if (!isServer)
+        if (!IsServer)
             return;
-        
-        if (GameNetworkManager.Singleton.numPlayers <= 0)
+
+        if (GameNetworkManager.Singleton.PlayersCount <= 0)
             return;
 
         if (isDead)
@@ -62,7 +62,7 @@ public class BotEntity : CharacterEntity
         yield return 0;
         while (true)
         {
-            if (GameNetworkManager.Singleton.numPlayers > 0 && !isDead)
+            if (GameNetworkManager.Singleton.PlayersCount > 0 && !isDead)
             {
                 yield return StartCoroutine(FindWaypoints());
                 yield return StartCoroutine(WalkToLastPosition());
@@ -96,7 +96,7 @@ public class BotEntity : CharacterEntity
             currentPosition += currentDirection;
             waypoints.Enqueue(RoundXZ(currentPosition));
             var bombDistance = 1 + PowerUpBombRange;
-            if (bomb == null && waypoints.Count > 4 && 
+            if (bomb == null && waypoints.Count > 4 &&
                 (IsNearBrickOrPlayer(currentPosition, Vector3.left, bombDistance) ||
                 IsNearBrickOrPlayer(currentPosition, Vector3.right, bombDistance) ||
                 IsNearBrickOrPlayer(currentPosition, Vector3.back, bombDistance) ||
@@ -166,7 +166,7 @@ public class BotEntity : CharacterEntity
             // If hit brick or character, then it's mean bot should plant the bomb here
             var brick = hitInfo.transform.GetComponent<BrickEntity>();
             var character = hitInfo.transform.GetComponent<CharacterEntity>();
-            return (brick != null && !brick.isDead) || 
+            return (brick != null && !brick.isDead) ||
                 (character != null && character != this && !character.isDead);
         }
         return false;
@@ -219,19 +219,19 @@ public class BotEntity : CharacterEntity
         var bombDistance = 1 + PowerUpBombRange;
         var currentPosition = CacheTransform.position;
         return (
-            (IsNearBrickOrPlayer(currentPosition, Vector3.left, bombDistance) && 
+            (IsNearBrickOrPlayer(currentPosition, Vector3.left, bombDistance) &&
             (!IsNearWallOrBrickOrBomb(currentPosition, Vector3.right) ||
             !IsNearWallOrBrickOrBomb(currentPosition, Vector3.forward) ||
             !IsNearWallOrBrickOrBomb(currentPosition, Vector3.back))) ||
-            (IsNearBrickOrPlayer(currentPosition, Vector3.right, bombDistance) && 
+            (IsNearBrickOrPlayer(currentPosition, Vector3.right, bombDistance) &&
             (!IsNearWallOrBrickOrBomb(currentPosition, Vector3.left) ||
             !IsNearWallOrBrickOrBomb(currentPosition, Vector3.forward) ||
             !IsNearWallOrBrickOrBomb(currentPosition, Vector3.back))) ||
-            (IsNearBrickOrPlayer(currentPosition, Vector3.forward, bombDistance) && 
+            (IsNearBrickOrPlayer(currentPosition, Vector3.forward, bombDistance) &&
             (!IsNearWallOrBrickOrBomb(currentPosition, Vector3.back) ||
             !IsNearWallOrBrickOrBomb(currentPosition, Vector3.left) ||
             !IsNearWallOrBrickOrBomb(currentPosition, Vector3.right))) ||
-            (IsNearBrickOrPlayer(currentPosition, Vector3.back, bombDistance) && 
+            (IsNearBrickOrPlayer(currentPosition, Vector3.back, bombDistance) &&
             (!IsNearWallOrBrickOrBomb(currentPosition, Vector3.forward) ||
             !IsNearWallOrBrickOrBomb(currentPosition, Vector3.left) ||
             !IsNearWallOrBrickOrBomb(currentPosition, Vector3.right))));

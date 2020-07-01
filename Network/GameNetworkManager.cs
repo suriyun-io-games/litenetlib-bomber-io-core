@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
+using LiteNetLibManager;
+using LiteNetLib.Utils;
 
-[RequireComponent(typeof(GameNetworkDiscovery))]
 public class GameNetworkManager : BaseNetworkGameManager
 {
     public static new GameNetworkManager Singleton
@@ -34,42 +34,15 @@ public class GameNetworkManager : BaseNetworkGameManager
         return msg;
     }
 
-    public override void OnClientConnect(NetworkConnection conn)
+    protected override void PrepareCharacter(NetDataWriter writer)
     {
-        if (!clientLoadedScene)
-        {
-            // Ready/AddPlayer is usually triggered by a scene load completing. if no scene was loaded, then Ready/AddPlayer it here instead.
-            ClientScene.Ready(conn);
-            ClientScene.AddPlayer(conn, 0, MakeJoinMessage());
-        }
+        MakeJoinMessage().Serialize(writer);
     }
 
-    public override void OnClientSceneChanged(NetworkConnection conn)
+    protected override BaseNetworkGameCharacter NewCharacter(NetDataReader reader)
     {
-        // always become ready.
-        ClientScene.Ready(conn);
-
-        bool addPlayer = (ClientScene.localPlayers.Count == 0);
-        bool foundPlayer = false;
-        for (int i = 0; i < ClientScene.localPlayers.Count; i++)
-        {
-            if (ClientScene.localPlayers[i].gameObject != null)
-            {
-                foundPlayer = true;
-                break;
-            }
-        }
-        // there are players, but their game objects have all been deleted
-        if (!foundPlayer)
-            addPlayer = true;
-
-        if (addPlayer)
-            ClientScene.AddPlayer(conn, 0, MakeJoinMessage());
-    }
-
-    protected override BaseNetworkGameCharacter NewCharacter(NetworkReader extraMessageReader)
-    {
-        var joinMessage = extraMessageReader.ReadMessage<JoinMessage>();
+        var joinMessage = new JoinMessage();
+        joinMessage.Deserialize(reader);
         var character = Instantiate(GameInstance.Singleton.characterPrefab);
         character.playerName = joinMessage.playerName;
         character.selectHead = joinMessage.selectHead;
@@ -89,7 +62,7 @@ public class GameNetworkManager : BaseNetworkGameManager
         foreach (var score in scores)
         {
             ++rank;
-            if (BaseNetworkGameCharacter.Local != null && score.netId.Equals(BaseNetworkGameCharacter.Local.netId))
+            if (BaseNetworkGameCharacter.Local != null && score.netId.Equals(BaseNetworkGameCharacter.Local.ObjectId))
             {
                 (BaseNetworkGameCharacter.Local as CharacterEntity).rank = rank;
                 break;
@@ -108,7 +81,7 @@ public class GameNetworkManager : BaseNetworkGameManager
     }
 
     [System.Serializable]
-    public class JoinMessage : MessageBase
+    public class JoinMessage : INetSerializable
     {
         public string playerName;
         public int selectHead;
@@ -116,5 +89,25 @@ public class GameNetworkManager : BaseNetworkGameManager
         public int selectBomb;
         public int[] selectCustomEquipments;
         public string extra;
+
+        public void Deserialize(NetDataReader reader)
+        {
+            playerName = reader.GetString();
+            selectHead = reader.GetInt();
+            selectCharacter = reader.GetInt();
+            selectBomb = reader.GetInt();
+            selectCustomEquipments = reader.GetIntArray();
+            extra = reader.GetString();
+        }
+
+        public void Serialize(NetDataWriter writer)
+        {
+            writer.Put(playerName);
+            writer.Put(selectHead);
+            writer.Put(selectCharacter);
+            writer.Put(selectBomb);
+            writer.PutArray(selectCustomEquipments);
+            writer.Put(extra);
+        }
     }
 }

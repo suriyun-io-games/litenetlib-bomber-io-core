@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
+using LiteNetLibManager;
 
-public class PowerUpEntity : NetworkBehaviour
+public class PowerUpEntity : LiteNetLibBehaviour
 {
     public const float DestroyDelay = 1f;
     [Header("Stats / Currencies")]
@@ -35,9 +35,9 @@ public class PowerUpEntity : NetworkBehaviour
         {
             isDead = true;
             EffectEntity.PlayEffect(powerUpEffect, character.effectTransform);
-            if (isServer)
+            if (IsServer)
                 character.addStats += stats;
-            if (character.isLocalPlayer)
+            if (character.IsOwnerClient)
             {
                 foreach (var currency in currencies)
                 {
@@ -57,7 +57,7 @@ public class PowerUpEntity : NetworkBehaviour
         }
         yield return new WaitForSeconds(DestroyDelay);
         // Destroy this on all clients
-        if (isServer)
-            NetworkServer.Destroy(gameObject);
+        if (IsServer)
+            NetworkDestroy();
     }
 }
