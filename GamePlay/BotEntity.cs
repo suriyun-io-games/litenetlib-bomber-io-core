@@ -46,14 +46,9 @@ public class BotEntity : CharacterEntity
             Move(direction);
             var targetRotation = Quaternion.LookRotation(heading);
             CacheTransform.rotation = Quaternion.Lerp(CacheTransform.rotation, targetRotation, Time.deltaTime * 5f);
-            BombEntity foundBomb = null;
+            BombEntity foundBomb;
             if (IsNearBomb(CacheTransform.position, direction, out foundBomb))
                 bomb = foundBomb;
-        }
-        else
-        {
-            var velocity = CacheRigidbody.velocity;
-            CacheRigidbody.velocity = new Vector3(0, velocity.y, 0);
         }
     }
 
@@ -207,7 +202,7 @@ public class BotEntity : CharacterEntity
     {
         if (bomb == null)
             return false;
-        var bombPosition = bomb.TempTransform.position;
+        var bombPosition = bomb.CacheTransform.position;
         if (Mathf.RoundToInt(bombPosition.x) == Mathf.RoundToInt(currentPosition.x) ||
             Mathf.RoundToInt(bombPosition.z) == Mathf.RoundToInt(currentPosition.z))
             return Vector3.Distance(bombPosition, currentPosition) <= 1 + bomb.addBombRange;
