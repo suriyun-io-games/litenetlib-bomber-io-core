@@ -1,11 +1,32 @@
-﻿[System.Serializable]
-public struct CharacterStats
+﻿using LiteNetLib.Utils;
+
+[System.Serializable]
+public struct CharacterStats : INetSerializable
 {
     public int bombRange;
     public int bombAmount;
     public int heart;
     public int moveSpeed;
     public bool canKickBomb;
+
+    public void Deserialize(NetDataReader reader)
+    {
+        bombRange = reader.GetInt();
+        bombAmount = reader.GetInt();
+        heart = reader.GetInt();
+        moveSpeed = reader.GetInt();
+        canKickBomb = reader.GetBool();
+    }
+
+    public void Serialize(NetDataWriter writer)
+    {
+        writer.Put(bombRange);
+        writer.Put(bombAmount);
+        writer.Put(heart);
+        writer.Put(moveSpeed);
+        writer.Put(canKickBomb);
+    }
+
     public static CharacterStats operator +(CharacterStats a, CharacterStats b)
     {
         var result = new CharacterStats();
