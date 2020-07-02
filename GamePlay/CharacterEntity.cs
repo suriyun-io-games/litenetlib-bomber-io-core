@@ -5,6 +5,7 @@ using LiteNetLibManager;
 using UnityEngine.UI;
 using static LiteNetLibManager.LiteNetLibSyncList;
 
+[RequireComponent(typeof(LiteNetLibTransform))]
 [RequireComponent(typeof(Rigidbody))]
 public class CharacterEntity : BaseNetworkGameCharacter
 {
@@ -61,6 +62,8 @@ public class CharacterEntity : BaseNetworkGameCharacter
     protected Dictionary<int, CustomEquipmentData> customEquipmentDict = new Dictionary<int, CustomEquipmentData>();
     protected bool isMobileInput;
     protected Vector2 inputMove;
+    protected Vector3? previousPosition;
+    protected Vector3 currentVelocity;
     protected Vector3 currentMoveDirection;
     protected BombEntity kickingBomb;
 
@@ -87,6 +90,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     public Transform CacheTransform { get; private set; }
     public Rigidbody CacheRigidbody { get; private set; }
     public Collider CacheCollider { get; private set; }
+    public LiteNetLibTransform CacheNetTransform { get; private set; }
 
     public int PowerUpBombRange
     {
@@ -154,6 +158,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
         CacheTransform = transform;
         CacheRigidbody = GetComponent<Rigidbody>();
         CacheCollider = GetComponent<Collider>();
+        CacheNetTransform = GetComponent<LiteNetLibTransform>();
+        CacheNetTransform.ownerClientCanSendTransform = true;
+        CacheNetTransform.ownerClientNotInterpolate = true;
         if (damageLaunchTransform == null)
             damageLaunchTransform = CacheTransform;
         if (effectTransform == null)
@@ -232,6 +239,12 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     private void FixedUpdate()
     {
+        if (!previousPosition.HasValue)
+            previousPosition = CacheTransform.position;
+        var currentMove = CacheTransform.position - previousPosition.Value;
+        currentVelocity = currentMove / Time.deltaTime;
+        previousPosition = CacheTransform.position;
+
         if (NetworkManager != null && NetworkManager.IsMatchEnded)
             return;
 
@@ -258,7 +271,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (kickingBomb == collision.gameObject.GetComponent<BombEntity>())
         {
             var moveDirNorm = currentMoveDirection.normalized;
-            var heading = kickingBomb.TempTransform.position - CacheTransform.position;
+            var heading = kickingBomb.CacheTransform.position - CacheTransform.position;
             var distance = heading.magnitude;
             var direction = heading / distance;
 
@@ -329,7 +342,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
         }
         else
         {
-            var velocity = CacheRigidbody.velocity;
+            var velocity = currentVelocity;
             var xzMagnitude = new Vector3(velocity.x, 0, velocity.z).magnitude;
             var ySpeed = velocity.y;
             animator.SetBool("IsDead", false);
@@ -346,21 +359,18 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     protected virtual void Move(Vector3 direction)
     {
-        if (direction.magnitude > 0)
+        if (direction.sqrMagnitude > 0)
         {
-            if (direction.magnitude > 1)
+            if (direction.sqrMagnitude > 1)
                 direction = direction.normalized;
+            direction.y = 0;
 
             var targetSpeed = GetMoveSpeed();
             var targetVelocity = direction * targetSpeed;
-
-            // Apply a force that attempts to reach our target velocity
-            Vector3 velocity = CacheRigidbody.velocity;
-            Vector3 velocityChange = (targetVelocity - velocity);
-            velocityChange.x = Mathf.Clamp(velocityChange.x, -targetSpeed, targetSpeed);
-            velocityChange.y = 0;
-            velocityChange.z = Mathf.Clamp(velocityChange.z, -targetSpeed, targetSpeed);
-            CacheRigidbody.AddForce(velocityChange, ForceMode.VelocityChange);
+            var rigidbodyVel = CacheRigidbody.velocity;
+            rigidbodyVel.y = 0;
+            if (rigidbodyVel.sqrMagnitude < 1)
+                CacheTransform.position += targetVelocity * Time.deltaTime;
 
             var rotateHeading = (CacheTransform.position + direction) - CacheTransform.position;
             var targetRotation = Quaternion.LookRotation(rotateHeading);
