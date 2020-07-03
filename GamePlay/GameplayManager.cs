@@ -45,7 +45,11 @@ public class GameplayManager : LiteNetLibBehaviour
             return;
         }
         Singleton = this;
+    }
 
+    public override void OnSetup()
+    {
+        base.OnSetup();
         powerUpDropWeights.Clear();
         foreach (var powerUp in powerUps)
         {
