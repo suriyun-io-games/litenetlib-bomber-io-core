@@ -84,5 +84,12 @@ public class IONetworkGameRule : BaseNetworkGameRule
             if (bomb != null && bomb.bombPrefab != null)
                 networkManager.Assets.RegisterPrefab(bomb.bombPrefab.Identity);
         }
+
+        foreach (var obj in networkManager.Assets.GetSceneObjects())
+        {
+            var gameplayManager = obj.GetComponentInChildren<GameplayManager>();
+            if (gameplayManager)
+                gameplayManager.RegisterPrefabs();
+        }
     }
 }
