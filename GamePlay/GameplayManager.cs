@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using LiteNetLibManager;
 
@@ -36,6 +35,7 @@ public class GameplayManager : LiteNetLibBehaviour
     public PowerUpSpawnData[] powerUps;
     public int noDropPowerUpWeight = 1;
     public readonly Dictionary<PowerUpEntity, int> powerUpDropWeights = new Dictionary<PowerUpEntity, int>();
+    private bool isRegisteredPrefabs;
 
     private void Awake()
     {
@@ -49,6 +49,9 @@ public class GameplayManager : LiteNetLibBehaviour
 
     public void RegisterPrefabs()
     {
+        if (isRegisteredPrefabs)
+            return;
+        isRegisteredPrefabs = true;
         powerUpDropWeights.Clear();
         foreach (var powerUp in powerUps)
         {
