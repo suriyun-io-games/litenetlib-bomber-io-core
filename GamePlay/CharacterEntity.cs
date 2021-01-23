@@ -53,6 +53,11 @@ public class CharacterEntity : BaseNetworkGameCharacter
         get { return isDead; }
     }
 
+    public override bool IsBot
+    {
+        get { return false; }
+    }
+
     protected readonly List<BombEntity> bombs = new List<BombEntity>();
     protected Camera targetCamera;
     protected CharacterModel characterModel;

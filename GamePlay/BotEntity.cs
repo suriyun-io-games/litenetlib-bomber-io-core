@@ -4,10 +4,16 @@ using UnityEngine;
 
 public class BotEntity : CharacterEntity
 {
+    public override bool IsBot
+    {
+        get { return true; }
+    }
+
     public const float ReachedTargetDistance = 0.1f;
     private Queue<Vector3> waypoints = new Queue<Vector3>();
     private Vector3 targetPosition;
     private BombEntity bomb;
+
     public override void OnStartServer()
     {
         base.OnStartServer();
