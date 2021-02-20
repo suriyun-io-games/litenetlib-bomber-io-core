@@ -224,8 +224,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
         if (NetworkManager != null && NetworkManager.IsMatchEnded)
             return;
 
+        var targetSimulateSpeed = GetMoveSpeed();
         CacheNetTransform.interpolateMode = LiteNetLibTransform.InterpolateMode.FixedSpeed;
-        CacheNetTransform.fixedInterpolateSpeed = TotalMoveSpeed;
+        CacheNetTransform.fixedInterpolateSpeed = targetSimulateSpeed;
 
         if (IsDead)
         {
