@@ -165,7 +165,6 @@ public class CharacterEntity : BaseNetworkGameCharacter
         CacheCollider = GetComponent<Collider>();
         CacheNetTransform = GetComponent<LiteNetLibTransform>();
         CacheNetTransform.ownerClientCanSendTransform = true;
-        CacheNetTransform.ownerClientNotInterpolate = true;
         if (damageLaunchTransform == null)
             damageLaunchTransform = CacheTransform;
         if (effectTransform == null)
@@ -224,6 +223,9 @@ public class CharacterEntity : BaseNetworkGameCharacter
         base.Update();
         if (NetworkManager != null && NetworkManager.IsMatchEnded)
             return;
+
+        CacheNetTransform.interpolateMode = LiteNetLibTransform.InterpolateMode.EstimatedSpeed;
+        CacheNetTransform.fixedInterpolateSpeed = TotalMoveSpeed;
 
         if (IsDead)
         {
