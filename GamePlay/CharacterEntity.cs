@@ -458,8 +458,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
     private void OnIsDeadChanged(bool value)
     {
-        if (!isDead && value)
-            deathTime = Time.unscaledTime;
+        deathTime = Time.unscaledTime;
         isDead = value;
     }
 
