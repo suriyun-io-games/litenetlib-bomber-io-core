@@ -30,7 +30,6 @@ public class PowerUpEntity : LiteNetLibBehaviour
             return;
 
         var character = other.GetComponent<CharacterEntity>();
-        var gameplayManager = GameplayManager.Singleton;
         if (character != null && !character.isDead)
         {
             isDead = true;
