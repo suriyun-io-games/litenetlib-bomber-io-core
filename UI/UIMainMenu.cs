@@ -113,7 +113,7 @@ public class UIMainMenu : MonoBehaviour
 
         if (characterModel != null)
         {
-            var animator = characterModel.TempAnimator;
+            var animator = characterModel.CacheAnimator;
             switch (previewState)
             {
                 case PreviewState.Idle:

@@ -338,7 +338,7 @@ public class CharacterEntity : BaseNetworkGameCharacter
     {
         if (characterModel == null)
             return;
-        var animator = characterModel.TempAnimator;
+        var animator = characterModel.CacheAnimator;
         if (animator == null)
             return;
         if (isDead)
