@@ -22,16 +22,16 @@ public class CharacterEntity : BaseNetworkGameCharacter
     [SyncField]
     public int watchAdsCount;
 
-    [SyncField(hook = "OnIsDeadChanged")]
+    [SyncField(onChangeMethodName = nameof(OnIsDeadChanged))]
     public bool isDead;
 
-    [SyncField(hook = "OnCharacterChanged")]
+    [SyncField(onChangeMethodName = nameof(OnCharacterChanged))]
     public int selectCharacter = 0;
 
-    [SyncField(hook = "OnHeadChanged")]
+    [SyncField(onChangeMethodName = nameof(OnHeadChanged))]
     public int selectHead = 0;
 
-    [SyncField(hook = "OnBombChanged")]
+    [SyncField(onChangeMethodName = nameof(OnBombChanged))]
     public int selectBomb = 0;
 
     public SyncListInt selectCustomEquipments = new SyncListInt();

@@ -14,7 +14,7 @@ public class BrickEntity : LiteNetLibBehaviour
     /// <summary>
     /// Use this flag to set brick renderer disabled, so when player's character come closer when is dead player won't see the brick
     /// </summary>
-    [SyncField(hook = "OnIsRendererDisabledChanged")]
+    [SyncField(onChangeMethodName = nameof(OnIsRendererDisabledChanged))]
     public bool isRendererDisabled;
     public float deathTime { get; private set; }
     
