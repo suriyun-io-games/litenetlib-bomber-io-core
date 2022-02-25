@@ -441,17 +441,23 @@ public class CharacterEntity : BaseNetworkGameCharacter
 
         var gameplayManager = GameplayManager.Singleton;
         if (target == this)
+        {
             score += gameplayManager.suicideScore;
+            GameNetworkManager.Singleton.OnScoreIncrease(this, gameplayManager.suicideScore);
+        }
         else
         {
             score += gameplayManager.killScore;
+            GameNetworkManager.Singleton.OnScoreIncrease(this, gameplayManager.killScore);
             foreach (var rewardCurrency in gameplayManager.rewardCurrencies)
             {
                 var currencyId = rewardCurrency.currencyId;
                 var amount = Random.Range(rewardCurrency.randomAmountMin, rewardCurrency.randomAmountMax);
                 TargetRewardCurrency(ConnectionId, currencyId, amount);
             }
-            ++killCount;
+            var increaseKill = 1;
+            killCount += increaseKill;
+            GameNetworkManager.Singleton.OnKillIncrease(this, increaseKill);
         }
         GameNetworkManager.Singleton.SendKillNotify(playerName, target.playerName, bombData == null ? string.Empty : bombData.GetId());
     }
