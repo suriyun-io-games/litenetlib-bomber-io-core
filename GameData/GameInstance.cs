@@ -30,6 +30,9 @@ public class GameInstance : BaseNetworkGameInstance
     public static readonly Dictionary<int, CharacterData> Characters = new Dictionary<int, CharacterData>();
     public static readonly Dictionary<int, BombData> Bombs = new Dictionary<int, BombData>();
     public static readonly Dictionary<int, CustomEquipmentData> CustomEquipments = new Dictionary<int, CustomEquipmentData>();
+
+    public bool PlayerSaveValidated { get; protected set; } = false;
+
     protected override void Awake()
     {
         base.Awake();
@@ -70,9 +73,16 @@ public class GameInstance : BaseNetworkGameInstance
         {
             CustomEquipments[customEquipment.GetHashId()] = customEquipment;
         }
+    }
 
+    private void LateUpdate()
+    {
         UpdateAvailableItems();
-        ValidatePlayerSave();
+        if (!PlayerSaveValidated && MonetizationManager.Save.IsPurchasedItemsLoaded)
+        {
+            PlayerSaveValidated = true;
+            ValidatePlayerSave();
+        }
     }
 
     public void UpdateAvailableItems()
