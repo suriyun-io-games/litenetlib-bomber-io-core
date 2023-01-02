@@ -1,3 +1,3 @@
 # litenetlib-bomber-io-core
 
-Looking for the demo? [here(Photon)](https://github.com/insthync/bomber-io-demo.git)
+Looking for the demo? [here(PUN2)](https://github.com/insthync/bomber-io-demo.git)
